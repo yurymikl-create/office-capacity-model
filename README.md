@@ -57,7 +57,9 @@ src/
 - “Seats” — stepped line in events mode, linear otherwise (#FFFFFF).
 - “On-site” — accent #00F6FF; “Headcount” — muted #8A8A8A. Every series can be hidden with the legend chips.
 - The green/red fill is a stack of three `Area` series: the base `min(on-site, seats)`, green `max(0, seats − on-site)`, red `max(0, on-site − seats)`. This paints exactly the gap between the lines.
-- The crossing marker is a `ReferenceLine` plus a `ReferenceDot`; the caption sits in a pill with a white background, clamped to the plot edges, with a 300 ms fade-in.
+- **Capacity first:** the left axis is scaled to seats and on-site, so a deficit or spare-capacity band is never flattened by a large headcount. If headcount exceeds the capacity peak by more than 25%, it moves to its own right axis (grey ticks); otherwise all three series share one scale.
+- **Emphasis:** the spare-capacity band uses a 20% mint fill and the deficit band a 30% red fill; the crossing line is always paired with a persistent red `Crossing: Nov 2028 →` chip in the toolbar that centres the window on that bucket.
+- The crossing marker is a `ReferenceLine` plus a `ReferenceDot`; the caption sits in a pill with a dark background, clamped to the plot edges, with a 300 ms fade-in.
 - The Y axis uses a hand-calculated “round” step (`niceStep`) so ticks never look like 55/110/165.
 
 ## Chart view
@@ -66,7 +68,7 @@ src/
 - **Aggregation rule:** each quarter/year is represented by its **worst month** — maximum deficit first, then maximum utilization, then the earliest month. All values of a bucket come from that single month, so a red month is never hidden by averaging or by a calm year-end. Tooltips show the bucket plus “worst month: Aug 2026”.
 - **Scroll:** the brush under the chart pans the timeline when dragged and resizes the window with its handles; the current range is printed in the toolbar. Horizontal trackpad scrolling works over the chart, and on touch screens a one-finger horizontal swipe pans the timeline.
 - **Zoom:** `− / Fit / +` buttons (25% steps, at least two buckets), `Ctrl/⌘ + scroll` with the cursor as the anchor, and **pinch-to-zoom** on touch screens. Vertical page scrolling still works over the chart; the Y scale stays stable while scrolling so the axis does not jump.
-- **Crossing outside the window:** the vertical marker is hidden and a `Crossing: Nov 2028 →` chip appears; clicking it centres the window on that bucket.
+- **Crossing outside the window:** the vertical marker is hidden and the persistent `Crossing: Nov 2028 →` chip centres the window on that bucket.
 - The month-level table, KPIs and alerts always use all monthly points, regardless of the current view.
 
 ## Design

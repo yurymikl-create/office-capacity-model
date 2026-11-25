@@ -46,7 +46,7 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
         <Row label="On-site" value={`${formatInt(point.visits)} people`} accent />
         <Row
           label="Deficit"
-          value={point.deficit > 0 ? seatCount(point.deficit) : '0'}
+          value={point.deficit > 0 ? seatCount(Math.ceil(point.deficit)) : '0'}
           danger={point.deficit > 0}
         />
         <Row label="Utilization" value={formatPercentValue(point.load)} />

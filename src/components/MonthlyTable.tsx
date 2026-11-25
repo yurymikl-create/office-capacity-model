@@ -44,7 +44,7 @@ export function MonthlyTable({ points, crossingIndex }: MonthlyTableProps) {
                 <td>{formatPercentValue(point.attendancePct)}</td>
                 <td>{formatInt(point.visits)}</td>
                 <td className={point.deficit > 0 ? 'is-deficit' : undefined}>
-                  {formatInt(point.deficit)}
+                  {formatInt(Math.ceil(point.deficit))}
                 </td>
                 <td>{formatPercentValue(point.load)}</td>
               </tr>

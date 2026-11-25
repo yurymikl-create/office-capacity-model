@@ -60,7 +60,7 @@ export function SummaryCards({ summary }: { summary: Summary }) {
         />
         <Stat
           label="Max deficit"
-          value={deficit > 0 ? seatCount(deficit) : '0'}
+          value={deficit > 0 ? seatCount(Math.ceil(deficit)) : '0'}
           hint={deficit > 0 && summary.maxDeficitLabel ? `peak — ${summary.maxDeficitLabel}` : 'no deficit'}
           danger={deficit > 0}
         />

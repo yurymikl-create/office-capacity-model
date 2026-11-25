@@ -94,19 +94,33 @@ function niceStep(rawStep: number): number {
   return nice * base;
 }
 
-/** Round Y-axis ticks with 8% headroom so the top line never touches the edge. */
-function buildYScale(points: ChartPoint[]): { max: number; ticks: number[] } {
-  const dataMax = Math.max(
-    1,
-    ...points.map((point) => Math.max(point.staff, point.seats, point.visits)),
-  );
-  const step = niceStep(dataMax / 5);
-  const max = Math.max(step, Math.ceil((dataMax * 1.08) / step) * step);
+/** Round Y-axis ticks with 8% headroom. */
+function niceScale(dataMax: number): { max: number; ticks: number[] } {
+  const safeMax = Math.max(1, dataMax);
+  const step = niceStep(safeMax / 5);
+  const max = Math.max(step, Math.ceil((safeMax * 1.08) / step) * step);
   const ticks: number[] = [];
   for (let index = 0; index * step <= max + step / 2; index += 1) {
     ticks.push(Math.round(index * step));
   }
   return { max, ticks };
+}
+
+/** Capacity scale: seats and on-site, optionally including headcount. */
+function buildYScale(points: ChartPoint[], includeStaff: boolean): { max: number; ticks: number[] } {
+  return niceScale(
+    Math.max(
+      1,
+      ...points.map((point) =>
+        Math.max(point.seats, point.visits, includeStaff ? point.staff : 0),
+      ),
+    ),
+  );
+}
+
+/** Headcount scale for the right axis. */
+function buildStaffScale(points: ChartPoint[]): { max: number; ticks: number[] } {
+  return niceScale(Math.max(1, ...points.map((point) => point.staff)));
 }
 
 interface CrossingLabelProps {
@@ -352,7 +366,20 @@ export function CapacityChart({
     () => points.slice(view.start, view.end + 1),
     [points, view.start, view.end],
   );
-  const yScale = useMemo(() => buildYScale(points), [points]);
+  const peaks = useMemo(
+    () =>
+      points.reduce(
+        (acc, point) => ({
+          capacity: Math.max(acc.capacity, point.seats, point.visits),
+          staff: Math.max(acc.staff, point.staff),
+        }),
+        { capacity: 1, staff: 1 },
+      ),
+    [points],
+  );
+  const dualAxis = peaks.staff > peaks.capacity * 1.25;
+  const yScale = useMemo(() => buildYScale(points, !dualAxis), [points, dualAxis]);
+  const staffScale = useMemo(() => buildStaffScale(points), [points]);
 
   const axisWidth = Math.max(240, chartWidth - 76);
   const maxTicks = Math.max(3, Math.floor(axisWidth / 64));
@@ -399,9 +426,9 @@ export function CapacityChart({
             Occupancy forecast
           </h2>
           <p className="card__hint">
-            {granularity === 'month'
-              ? 'Monthly · people and seats'
-              : `${GRANULARITY_LABEL[granularity]} · people and seats · worst month per bucket`}
+            {GRANULARITY_LABEL[granularity]}
+            {granularity === 'month' ? '' : ' · worst month per bucket'}
+            {dualAxis && prefs.showStaff ? ' · left: seats & on-site · right: headcount' : ''}
           </p>
         </div>
 
@@ -412,6 +439,13 @@ export function CapacityChart({
               type="button"
               className="legend__chip"
               aria-pressed={prefs[item.key]}
+              title={
+                dualAxis
+                  ? item.key === 'showStaff'
+                    ? 'Headcount — right axis'
+                    : `${item.label} — left axis`
+                  : `${item.label} — single scale`
+              }
               onClick={() => onToggle(item.key)}
             >
               <span className="legend__swatch" style={{ background: item.color }} />
@@ -470,8 +504,13 @@ export function CapacityChart({
 
         <span className="chart-range">{rangeLabel}</span>
 
-        {crossing && !crossingVisible ? (
-          <button type="button" className="chart-jump" onClick={jumpToCrossing}>
+        {crossing ? (
+          <button
+            type="button"
+            className="chart-jump"
+            onClick={jumpToCrossing}
+            title="Centre the chart on the crossing month"
+          >
             Crossing: {crossing.monthLabel} →
           </button>
         ) : null}
@@ -501,9 +540,23 @@ export function CapacityChart({
               allowDecimals={false}
               domain={[0, yScale.max]}
               ticks={yScale.ticks}
-              tick={{ fill: COLORS.muted, fontSize: 11 }}
+              tick={{ fill: '#d6d6d6', fontSize: 11 }}
               tickFormatter={(value: number) => formatInt(value)}
             />
+            {dualAxis && prefs.showStaff ? (
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                width={52}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                domain={[0, staffScale.max]}
+                ticks={staffScale.ticks}
+                tick={{ fill: COLORS.staff, fontSize: 11 }}
+                tickFormatter={(value: number) => formatInt(value)}
+              />
+            ) : null}
             <Tooltip
               content={<ChartTooltip />}
               isAnimationActive={false}
@@ -529,7 +582,7 @@ export function CapacityChart({
               stackId="zones"
               stroke="none"
               fill={COLORS.green}
-              fillOpacity={0.14}
+              fillOpacity={0.2}
               isAnimationActive={!reducedMotion}
               animationDuration={animationDuration}
               activeDot={false}
@@ -541,7 +594,7 @@ export function CapacityChart({
               stackId="zones"
               stroke="none"
               fill={COLORS.danger}
-              fillOpacity={0.16}
+              fillOpacity={0.3}
               isAnimationActive={!reducedMotion}
               animationDuration={animationDuration}
               activeDot={false}
@@ -549,7 +602,7 @@ export function CapacityChart({
 
             {prefs.showStaff ? (
               <Line
-                yAxisId="left"
+                yAxisId={dualAxis ? 'right' : 'left'}
                 type="linear"
                 dataKey="staff"
                 name="Headcount"
