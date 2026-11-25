@@ -11,6 +11,7 @@ import { PARAM_ORDER } from './data/defaults';
 export default function App() {
   const model = useCapacityModel();
   const { state, summary } = model;
+  const baseDailyVisitors = Math.round((state.staff.base * state.attendance.base) / 100);
 
   const handleReset = () => {
     const confirmed = window.confirm(
@@ -43,6 +44,7 @@ export default function App() {
               startYear={state.startYear}
               startMonth={state.startMonth}
               horizonMonths={state.horizonMonths}
+              dailyVisitors={key === 'attendance' ? baseDailyVisitors : undefined}
               onBase={(value) => model.setBase(key, value)}
               onMode={(mode) => model.setMode(key, mode)}
               onStep={(value) => model.setStep(key, value)}

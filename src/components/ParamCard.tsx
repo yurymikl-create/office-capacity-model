@@ -1,6 +1,6 @@
 import type { ModelEvent, Mode, ParamKey, ParamState } from '../types';
 import { PARAM_META } from '../data/defaults';
-import { formatNumber } from '../lib/format';
+import { formatInt, formatNumber } from '../lib/format';
 import { ModeTabs } from './ModeTabs';
 import { NumberField } from './NumberField';
 import { EventsTable } from './EventsTable';
@@ -11,6 +11,7 @@ interface ParamCardProps {
   startYear: number;
   startMonth: number;
   horizonMonths: number;
+  dailyVisitors?: number;
   onBase: (value: number) => void;
   onMode: (mode: Mode) => void;
   onStep: (value: number) => void;
@@ -25,6 +26,7 @@ export function ParamCard({
   startYear,
   startMonth,
   horizonMonths,
+  dailyVisitors,
   onBase,
   onMode,
   onStep,
@@ -75,6 +77,12 @@ export function ParamCard({
           />
         </div>
       </div>
+
+      {paramKey === 'attendance' && dailyVisitors !== undefined ? (
+        <p className="param__note">
+          At base headcount: <b>{formatInt(dailyVisitors)}</b> people/day
+        </p>
+      ) : null}
 
       <div className="param__row">
         <span className="param__label">Mode</span>

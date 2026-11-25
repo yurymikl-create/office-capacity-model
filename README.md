@@ -23,6 +23,8 @@ Horizon is configurable from 1 to 120 months with quick presets for 1/2/5/10 yea
 
 Value guards: attendance is clamped to 0…100%, headcount ≥ 0, seats ≥ 1.
 
+**Average daily attendance.** `On-site[m]` is the average number of people in the office on a working day, not a monthly total: `headcount × attendance`, e.g. 160 people × 40% = 64 people/day. Seats are compared against this daily average. The UI labels it “On-site / day” and shows the formula next to the KPI (`= 160 staff × 40%`). There is deliberately no weekly profile in the MVP, so the daily figure is an average across working days.
+
 ## Defaults and persistence
 
 The model starts with 100 people, 100 seats, 60% attendance and a 24-month horizon beginning in January of the current year. The horizon field accepts any whole number of months from 1 to 120; the quick chips (1/2/5/10 years) simply fill it. A scenario is the current combination of parameters, the start month and the horizon — there are no saved presets to switch between.
@@ -59,7 +61,7 @@ src/
 ## Chart
 
 - “Seats” — stepped line in events mode, linear otherwise (#FFFFFF).
-- “On-site” — accent #00F6FF; “Headcount” — muted #8A8A8A. Every series can be hidden with the legend chips.
+- “On-site / day” — accent #00F6FF; “Headcount” — muted #8A8A8A. Every series can be hidden with the legend chips.
 - The green/red fill is a stack of three `Area` series: the base `min(on-site, seats)`, green `max(0, seats − on-site)`, red `max(0, on-site − seats)`. This paints exactly the gap between the lines.
 - **Capacity first:** the left axis is scaled to seats and on-site, so a deficit or spare-capacity band is never flattened by a large headcount. If headcount exceeds the capacity peak by more than 25%, it moves to its own right axis (grey ticks); otherwise all three series share one scale.
 - **Emphasis:** the spare-capacity band uses a 20% mint fill and the deficit band a 30% red fill; the crossing line is always paired with a persistent red `Crossing: Nov 2028 →` chip in the toolbar that centres the window on that bucket.

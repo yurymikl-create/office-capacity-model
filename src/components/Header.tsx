@@ -23,7 +23,7 @@ export function Header({ horizonMonths, onHorizonChange, onReset }: HeaderProps)
             Headcount — Seats — <span className="text-gradient">Attendance</span>
           </h1>
           <p className="app-header__subtitle">
-            On-site = headcount × attendance. Everything runs and stays in your browser.
+            Average daily on-site = headcount × attendance. Everything runs and stays in your browser.
           </p>
         </div>
       </div>

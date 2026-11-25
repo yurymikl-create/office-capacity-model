@@ -75,7 +75,7 @@ export const PARAM_META: Record<ParamKey, ParamMeta> = {
   attendance: {
     title: 'Attendance',
     unitShort: '%',
-    hint: 'Average share of staff coming to the office',
+    hint: 'Average share of staff in the office on a working day',
     min: 0,
     max: 100,
     sliderMax: 100,

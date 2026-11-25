@@ -43,7 +43,7 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
         <Row label="Headcount" value={`${formatInt(point.staff)} people`} />
         <Row label="Seats" value={`${formatInt(point.seats)} seats`} />
         <Row label="Attendance" value={formatPercentValue(point.attendancePct)} />
-        <Row label="On-site" value={`${formatInt(point.visits)} people`} accent />
+        <Row label="On-site / day" value={`${formatInt(point.visits)} people`} accent />
         <Row
           label="Deficit"
           value={point.deficit > 0 ? seatCount(Math.ceil(point.deficit)) : '0'}
@@ -51,7 +51,7 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
         />
         <Row label="Utilization" value={formatPercentValue(point.load)} />
       </dl>
-      <p className="chart-tooltip__note">on-site = headcount × attendance</p>
+      <p className="chart-tooltip__note">avg/day = headcount × attendance</p>
     </div>
   );
 }

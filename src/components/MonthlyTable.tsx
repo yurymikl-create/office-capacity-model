@@ -30,7 +30,7 @@ export function MonthlyTable({ points, crossingIndex }: MonthlyTableProps) {
               <th scope="col">Headcount</th>
               <th scope="col">Seats</th>
               <th scope="col">Attendance</th>
-              <th scope="col">On-site</th>
+              <th scope="col">On-site / day</th>
               <th scope="col">Deficit</th>
               <th scope="col">Utilization</th>
             </tr>

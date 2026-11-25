@@ -43,7 +43,7 @@ const COLORS = {
 
 const LEGEND: { key: ChartLineKey; label: string; color: string }[] = [
   { key: 'showStaff', label: 'Headcount', color: COLORS.staff },
-  { key: 'showVisits', label: 'On-site', color: COLORS.visits },
+  { key: 'showVisits', label: 'On-site / day', color: COLORS.visits },
   { key: 'showSeats', label: 'Seats', color: COLORS.seats },
 ];
 
@@ -427,8 +427,9 @@ export function CapacityChart({
           </h2>
           <p className="card__hint">
             {GRANULARITY_LABEL[granularity]}
-            {granularity === 'month' ? '' : ' · worst month per bucket'}
-            {dualAxis && prefs.showStaff ? ' · left: seats & on-site · right: headcount' : ''}
+            {granularity === 'month' ? '' : ' · worst month per bucket'} · avg/day = headcount ×
+            attendance
+            {dualAxis && prefs.showStaff ? ' · right: headcount' : ''}
           </p>
         </div>
 
@@ -620,7 +621,7 @@ export function CapacityChart({
                 yAxisId="left"
                 type="linear"
                 dataKey="visits"
-                name="On-site"
+                name="On-site / day"
                 stroke={COLORS.visits}
                 strokeWidth={2}
                 dot={false}

@@ -31,10 +31,10 @@ export function SummaryCards({ summary }: { summary: Summary }) {
     <section className="summary-block" aria-label="Summary">
       <div className="summary">
         <Stat
-          label="On-site"
+          label="Avg daily on-site"
           value={formatInt(final.visits)}
-          unit="people"
-          hint={`as of ${final.label}`}
+          unit="people/day"
+          hint={`= ${formatInt(final.staff)} staff × ${formatPercentValue(final.attendancePct)} · as of ${final.label}`}
         />
         <Stat label="Seats" value={formatInt(final.seats)} unit="seats" hint={`as of ${final.label}`} />
         <Stat
