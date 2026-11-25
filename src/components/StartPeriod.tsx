@@ -1,5 +1,5 @@
 import { MONTHS_NOMINATIVE } from '../data/defaults';
-import { NumberField } from './NumberField';
+import { YearSelect } from './YearSelect';
 
 interface StartPeriodProps {
   startYear: number;
@@ -28,12 +28,13 @@ export function StartPeriod({ startYear, startMonth, onChange }: StartPeriodProp
             </option>
           ))}
         </select>
-        <NumberField
+        <YearSelect
           value={startYear}
           min={2000}
           max={2100}
-          onCommit={(year) => onChange(year, startMonth)}
+          onChange={(year) => onChange(year, startMonth)}
           ariaLabel="Start year"
+          className="start-period__year"
         />
       </div>
     </section>

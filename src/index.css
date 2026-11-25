@@ -560,6 +560,10 @@ input[type='range']::-moz-range-thumb {
   min-width: 120px;
 }
 
+.start-period__fields .start-period__year {
+  min-width: 92px;
+}
+
 .param {
   display: flex;
   flex-direction: column;
@@ -663,11 +667,11 @@ input[type='range']::-moz-range-thumb {
 }
 
 .events__head--count {
-  grid-template-columns: 112px 68px minmax(0, 1fr) 28px;
+  grid-template-columns: 112px 86px minmax(0, 1fr) 28px;
 }
 
 .events__head--percent {
-  grid-template-columns: 104px 64px minmax(0, 1fr) 96px 28px;
+  grid-template-columns: 104px 80px minmax(0, 1fr) 96px 28px;
 }
 
 .events__head span {
@@ -681,11 +685,11 @@ input[type='range']::-moz-range-thumb {
 }
 
 .event-row--count {
-  grid-template-columns: 112px 68px minmax(0, 1fr) 28px;
+  grid-template-columns: 112px 86px minmax(0, 1fr) 28px;
 }
 
 .event-row--percent {
-  grid-template-columns: 104px 64px minmax(0, 1fr) 96px 28px;
+  grid-template-columns: 104px 80px minmax(0, 1fr) 96px 28px;
 }
 
 .event-row select {
@@ -1277,24 +1281,53 @@ input[type='range']::-moz-range-thumb {
   }
 
   .event-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    gap: 8px;
+  }
+
+  .event-row--count {
+    grid-template-columns: minmax(0, 1fr) 84px 76px 28px;
+    grid-template-areas: 'month year value delete';
+  }
+
+  .event-row--percent {
+    grid-template-columns: minmax(0, 1fr) 84px 76px 28px;
+    grid-template-areas:
+      'month year value delete'
+      'format format format format';
   }
 
   .event-row select {
-    flex: 1 1 104px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .event-row select:nth-of-type(1) {
+    grid-area: month;
+  }
+
+  .event-row select:nth-of-type(2) {
+    grid-area: year;
+  }
+
+  .event-row--percent select:nth-of-type(3) {
+    grid-area: format;
   }
 
   .event-row .number-field {
-    flex: 1 1 76px;
+    grid-area: value;
   }
 
   .event-row input[type='number'] {
     width: 100%;
   }
 
+  .event-row .number-field__suffix {
+    display: none;
+  }
+
   .event-row .icon-button {
-    flex: 0 0 28px;
+    grid-area: delete;
   }
 
   .card {

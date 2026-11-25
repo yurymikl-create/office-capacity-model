@@ -27,6 +27,8 @@ The model starts with 100 people, 100 seats, 60% attendance and a 24-month horiz
 
 The current state is autosaved to `localStorage` under `office-capacity-model:state` (schema version 2). A state saved by the previous version (`office-capacity-model:v1`, with `horizonYears` and `scenarioId`) is migrated automatically: years become months, the scenario label is dropped, and the legacy key is removed. “Clear all” removes both keys and restores the defaults; the next write happens only after the next edit.
 
+Dates are chosen from dropdowns: the start month and start year (years are grouped by decade, 2000–2100), and the month/year of every event. Event years are limited to the model window plus one year on either side; an existing out-of-window event still shows its year.
+
 ## Commands
 
 ```bash

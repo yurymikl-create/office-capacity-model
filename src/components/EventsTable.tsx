@@ -1,7 +1,8 @@
 import type { ModelEvent, ParamKey } from '../types';
 import { MONTHS_NOMINATIVE, PARAM_META } from '../data/defaults';
-import { eventWindowStatus } from '../lib/calc';
+import { addMonths, eventWindowStatus } from '../lib/calc';
 import { NumberField } from './NumberField';
+import { YearSelect } from './YearSelect';
 
 interface EventsTableProps {
   paramKey: ParamKey;
@@ -29,6 +30,7 @@ export function EventsTable({
   onAdd,
 }: EventsTableProps) {
   const sorted = [...events].sort((a, b) => a.year - b.year || a.month - b.month);
+  const horizonEnd = addMonths(startYear, startMonth, horizonMonths);
   const hasOutside = sorted.some(
     (event) => eventWindowStatus(event, startYear, startMonth, horizonMonths) !== 'within',
   );
@@ -69,12 +71,12 @@ export function EventsTable({
                 ))}
               </select>
 
-              <NumberField
+              <YearSelect
                 value={event.year}
-                min={2000}
-                max={2100}
-                onCommit={(year) => onChange(event.id, { year })}
-                ariaLabel="Event year"
+                min={Math.min(startYear - 1, event.year)}
+                max={Math.max(horizonEnd.year + 1, event.year)}
+                onChange={(year) => onChange(event.id, { year })}
+                ariaLabel={`Event year: ${MONTHS_NOMINATIVE[event.month]}`}
               />
 
               {supportsAbsolute ? (
