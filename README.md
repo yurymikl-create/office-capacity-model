@@ -1,5 +1,7 @@
 # Headcount — Seats — Attendance
 
+**Live demo:** https://yurymikl-create.github.io/office-capacity-model/ · **Repository:** https://github.com/yurymikl-create/office-capacity-model
+
 A static office occupancy model: React + TypeScript + Vite + Recharts. No backend, no network requests at runtime. It shows when the number of people actually coming to the office exceeds the number of seats.
 
 ## Formulas
