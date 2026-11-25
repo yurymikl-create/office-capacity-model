@@ -69,6 +69,11 @@ export default function App() {
           <MonthlyTable points={model.points} crossingIndex={summary.crossingIndex} />
         </section>
       </div>
+
+      <footer className="app-footer">
+        <span>Office capacity model</span>
+        <span>MVP · all data stays in your browser · no network requests</span>
+      </footer>
     </div>
   );
 }

@@ -16,14 +16,14 @@ import { formatInt } from '../lib/format';
 import { ChartTooltip } from './ChartTooltip';
 
 const COLORS = {
-  staff: '#94A3B8',
-  visits: '#2563EB',
-  seats: '#1A1A1A',
-  danger: '#DC2626',
-  green: '#16A34A',
-  grid: '#EEF0F3',
-  axis: '#E5E7EB',
-  muted: '#6B7280',
+  staff: '#8a8a8a',
+  visits: '#00f6ff',
+  seats: '#ffffff',
+  danger: '#ff4d40',
+  green: '#00f4ab',
+  grid: '#1c1c1c',
+  axis: '#2c2c2c',
+  muted: '#8a8a8a',
 };
 
 const LEGEND: { key: keyof ChartPrefs; label: string; color: string }[] = [
@@ -99,8 +99,8 @@ function CrossingLabel({ text, chartWidth = 720, viewBox }: CrossingLabelProps) 
         width={pillWidth}
         height={21}
         rx={6}
-        fill="#FFFFFF"
-        stroke="#FECACA"
+        fill="#060606"
+        stroke="rgba(255, 77, 64, 0.45)"
         strokeWidth={1}
       />
       <text
@@ -109,7 +109,7 @@ function CrossingLabel({ text, chartWidth = 720, viewBox }: CrossingLabelProps) 
         textAnchor="middle"
         fontSize={11}
         fontWeight={600}
-        fill="#DC2626"
+        fill="#ff6b60"
       >
         {text}
       </text>
@@ -230,7 +230,7 @@ export function CapacityChart({
             <Tooltip
               content={<ChartTooltip />}
               isAnimationActive={false}
-              cursor={{ stroke: '#D1D5DB', strokeDasharray: '4 4' }}
+              cursor={{ stroke: '#3a3a3a', strokeDasharray: '4 4' }}
               wrapperStyle={{ outline: 'none', zIndex: 5 }}
             />
 
@@ -252,7 +252,7 @@ export function CapacityChart({
               stackId="zones"
               stroke="none"
               fill={COLORS.green}
-              fillOpacity={0.1}
+              fillOpacity={0.14}
               isAnimationActive={!reducedMotion}
               animationDuration={animationDuration}
               activeDot={false}
@@ -264,7 +264,7 @@ export function CapacityChart({
               stackId="zones"
               stroke="none"
               fill={COLORS.danger}
-              fillOpacity={0.12}
+              fillOpacity={0.16}
               isAnimationActive={!reducedMotion}
               animationDuration={animationDuration}
               activeDot={false}
@@ -333,7 +333,7 @@ export function CapacityChart({
                 y={crossingPoint.seats}
                 r={4}
                 fill={COLORS.danger}
-                stroke="#FFFFFF"
+                stroke="#060606"
                 strokeWidth={2}
                 className="crossing-dot"
               />

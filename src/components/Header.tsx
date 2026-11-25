@@ -19,12 +19,21 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="app-header">
-      <div className="app-header__titles">
-        <h1 className="app-header__title">Headcount — Seats — Attendance</h1>
-        <p className="app-header__subtitle">
-          Office occupancy model: on-site = headcount × attendance. All calculations and data stay in
-          your browser.
-        </p>
+      <div className="app-header__brand">
+        <div className="brand-mark" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="app-header__titles">
+          <p className="app-header__eyebrow">Office capacity model</p>
+          <h1 className="app-header__title">
+            Headcount — Seats — <span className="text-gradient">Attendance</span>
+          </h1>
+          <p className="app-header__subtitle">
+            On-site = headcount × attendance. Everything runs and stays in your browser.
+          </p>
+        </div>
       </div>
 
       <div className="app-header__controls">

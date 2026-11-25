@@ -58,11 +58,17 @@ src/
 
 ## Chart
 
-- “Seats” — stepped line in events mode, linear otherwise (#1A1A1A).
-- “On-site” — accent #2563EB; “Headcount” — muted #94A3B8. Every series can be hidden with the legend chips.
+- “Seats” — stepped line in events mode, linear otherwise (#FFFFFF).
+- “On-site” — accent #00F6FF; “Headcount” — muted #8A8A8A. Every series can be hidden with the legend chips.
 - The green/red fill is a stack of three `Area` series: the base `min(on-site, seats)`, green `max(0, seats − on-site)`, red `max(0, on-site − seats)`. This paints exactly the gap between the lines.
 - The crossing marker is a `ReferenceLine` plus a `ReferenceDot`; the caption sits in a pill with a white background, clamped to the plot edges, with a 300 ms fade-in.
 - The Y axis uses a hand-calculated “round” step (`niceStep`) so ticks never look like 55/110/165.
+
+## Design
+
+The UI follows EPAM’s visual language: a `#060606` canvas, white type, cyan `#00F6FF` as the only interactive accent, EPAM red `#FF4D40` for deficits, mint `#00F4AB` for spare capacity and violet `#B896FF` inside the gradient highlight on “Attendance”. Surfaces are flat — 1 px borders, no shadows, 12 px card radius — while buttons, chips and the horizon switch are pills with 10–12 px uppercase labels and wide tracking. The brand tile in the header is an abstract bar mark, not the EPAM logo.
+
+Fonts: Manrope for display headings and key figures (light 300 weights), Inter for dense UI text. Both are self-hosted through `@fontsource-variable/*`, so the runtime makes no network requests.
 
 ## CSP and fonts
 
@@ -74,7 +80,7 @@ img-src 'self' data:; font-src 'self' data:; connect-src 'self';
 base-uri 'none'; form-action 'none'
 ```
 
-`style-src 'unsafe-inline'` is required: Recharts positions the tooltip and legend with inline styles. Scripts stay strict and no external CDN is used — Inter is bundled locally via `@fontsource-variable/inter`.
+`style-src 'unsafe-inline'` is required: Recharts positions the tooltip and legend with inline styles. Scripts stay strict and no external CDN is used — Inter and Manrope are bundled locally via `@fontsource-variable/*`.
 
 ## Deploying to GitHub Pages
 
