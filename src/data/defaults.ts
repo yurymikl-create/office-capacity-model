@@ -103,7 +103,6 @@ export function createDefaultState(now: Date = new Date()): ModelState {
     staff: { base: DEFAULT_VALUES.staff, mode: 'plateau', step: 0, events: [] },
     seats: { base: DEFAULT_VALUES.seats, mode: 'plateau', step: 0, events: [] },
     attendance: { base: DEFAULT_VALUES.attendance, mode: 'plateau', step: 0, events: [] },
-    scenarioId: 'base',
     chartPrefs: { showStaff: true, showVisits: true, showSeats: true },
   };
 }

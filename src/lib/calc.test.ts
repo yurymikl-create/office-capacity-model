@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ModelState } from '../types';
 import { createDefaultState } from '../data/defaults';
-import { buildPresetState } from '../data/presets';
 import {
   addMonths,
   aggregateYearly,
@@ -245,42 +244,6 @@ describe('yearly aggregation', () => {
 
     expect(yearly[0]?.label).toBe('Dec 2026');
     expect(yearly[1]?.label).toBe('Dec 2027');
-  });
-});
-
-describe('presets', () => {
-  it('Baseline keeps every parameter flat', () => {
-    const state = buildPresetState('base', NOW);
-    expect(state.scenarioId).toBe('base');
-    expect(state.horizonYears).toBe(2);
-    for (const key of ['staff', 'seats', 'attendance'] as const) {
-      expect(state[key].mode).toBe('plateau');
-      expect(state[key].events).toHaveLength(0);
-    }
-  });
-
-  it('Growth uses a 2% of base monthly trend', () => {
-    const state = buildPresetState('growth', NOW);
-    expect(state.scenarioId).toBe('growth');
-    expect(state.staff.mode).toBe('trend');
-    expect(state.staff.step).toBe(2);
-    expect(state.horizonYears).toBe(5);
-  });
-
-  it('Hybrid sets 40% attendance and a +20 seats event in August', () => {
-    const state = buildPresetState('hybrid', NOW);
-    expect(state.attendance.base).toBe(40);
-    expect(state.staff.base).toBe(160);
-    expect(state.seats.mode).toBe('events');
-    expect(state.seats.base).toBe(60);
-    expect(state.seats.events).toHaveLength(1);
-    expect(state.seats.events[0]?.month).toBe(7);
-    expect(state.seats.events[0]?.value).toBe(20);
-
-    const points = buildMonthly(state);
-    expect(points[0]?.deficit).toBe(4);
-    expect(points[7]?.seats).toBe(80);
-    expect(points[7]?.deficit).toBe(0);
   });
 });
 

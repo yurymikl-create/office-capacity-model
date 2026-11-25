@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { buildPresetState } from '../data/presets';
 import { createDefaultState } from '../data/defaults';
 import type { StorageLike } from './storage';
 import { clearState, loadState, parseState, saveState, STORAGE_KEY } from './storage';
@@ -25,7 +24,20 @@ function createFakeStorage(initial: Record<string, string> = {}): StorageLike & 
 describe('storage', () => {
   it('saves and loads state without losses', () => {
     const storage = createFakeStorage();
-    const state = buildPresetState('hybrid', NOW);
+    const state = createDefaultState(NOW);
+    state.staff = {
+      base: 160,
+      mode: 'trend',
+      step: 3,
+      events: [{ id: 'e1', year: 2026, month: 2, kind: 'delta', value: 10 }],
+    };
+    state.seats = {
+      base: 90,
+      mode: 'events',
+      step: 0,
+      events: [{ id: 'e2', year: 2026, month: 7, kind: 'delta', value: 20 }],
+    };
+    state.attendance = { base: 45, mode: 'plateau', step: 0, events: [] };
 
     saveState(state, storage);
     const loaded = loadState(storage);
@@ -94,7 +106,7 @@ describe('storage', () => {
 
   it('clears the storage', () => {
     const storage = createFakeStorage();
-    saveState(buildPresetState('growth', NOW), storage);
+    saveState(createDefaultState(NOW), storage);
     expect(storage.map.size).toBe(1);
 
     clearState(storage);

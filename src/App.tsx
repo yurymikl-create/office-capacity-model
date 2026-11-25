@@ -14,7 +14,7 @@ export default function App() {
 
   const handleReset = () => {
     const confirmed = window.confirm(
-      'Clear all settings and return to the baseline scenario? Data in localStorage will be removed.',
+      'Clear all settings and return to defaults? Data in localStorage will be removed.',
     );
     if (confirmed) model.resetAll();
   };
@@ -23,9 +23,7 @@ export default function App() {
     <div className="app">
       <Header
         horizonYears={state.horizonYears}
-        scenarioId={state.scenarioId}
         onHorizonChange={model.setHorizon}
-        onPreset={model.applyPreset}
         onReset={handleReset}
       />
 

@@ -7,27 +7,18 @@ import type {
   Mode,
   ParamKey,
   ParamState,
-  PresetChoice,
-  PresetId,
 } from '../types';
 import { createDefaultState } from '../data/defaults';
-import { buildPresetState } from '../data/presets';
 import { addMonths, buildMonthly, chartSeries, compareEvents, summarize } from '../lib/calc';
 import { clearState, loadState, saveState } from '../lib/storage';
 import { createId } from '../lib/id';
 
 const AUTOSAVE_DELAY = 150;
 
-function withParam(
-  state: ModelState,
-  key: ParamKey,
-  param: ParamState,
-  scenarioId: PresetId,
-): ModelState {
-  const next: ModelState = { ...state, scenarioId };
-  if (key === 'staff') return { ...next, staff: param };
-  if (key === 'seats') return { ...next, seats: param };
-  return { ...next, attendance: param };
+function withParam(state: ModelState, key: ParamKey, param: ParamState): ModelState {
+  if (key === 'staff') return { ...state, staff: param };
+  if (key === 'seats') return { ...state, seats: param };
+  return { ...state, attendance: param };
 }
 
 function nextEventDate(state: ModelState, param: ParamState): { year: number; month: number } {
@@ -67,7 +58,7 @@ export function useCapacityModel() {
   }, [summary.crossingIndex, points, chart.isYearly]);
 
   const updateParam = useCallback((key: ParamKey, patch: Partial<ParamState>) => {
-    setState((prev) => withParam(prev, key, { ...prev[key], ...patch }, 'custom'));
+    setState((prev) => withParam(prev, key, { ...prev[key], ...patch }));
   }, []);
 
   const setBase = useCallback(
@@ -96,7 +87,7 @@ export function useCapacityModel() {
         kind: 'delta',
         value: 0,
       };
-      return withParam(prev, key, { ...param, events: [...param.events, event] }, 'custom');
+      return withParam(prev, key, { ...param, events: [...param.events, event] });
     });
   }, []);
 
@@ -104,7 +95,7 @@ export function useCapacityModel() {
     setState((prev) => {
       const param = prev[key];
       const events = param.events.map((event) => (event.id === id ? { ...event, ...patch } : event));
-      return withParam(prev, key, { ...param, events }, 'custom');
+      return withParam(prev, key, { ...param, events });
     });
   }, []);
 
@@ -112,12 +103,12 @@ export function useCapacityModel() {
     setState((prev) => {
       const param = prev[key];
       const events = param.events.filter((event) => event.id !== id);
-      return withParam(prev, key, { ...param, events }, 'custom');
+      return withParam(prev, key, { ...param, events });
     });
   }, []);
 
   const setHorizon = useCallback((horizonYears: HorizonYears) => {
-    setState((prev) => ({ ...prev, horizonYears, scenarioId: 'custom' }));
+    setState((prev) => ({ ...prev, horizonYears }));
   }, []);
 
   const setStart = useCallback((startYear: number, startMonth: number) => {
@@ -125,12 +116,7 @@ export function useCapacityModel() {
       ...prev,
       startYear,
       startMonth: Math.min(11, Math.max(0, startMonth)),
-      scenarioId: 'custom',
     }));
-  }, []);
-
-  const applyPreset = useCallback((id: PresetChoice) => {
-    setState(buildPresetState(id));
   }, []);
 
   const resetAll = useCallback(() => {
@@ -161,7 +147,6 @@ export function useCapacityModel() {
     removeEvent,
     setHorizon,
     setStart,
-    applyPreset,
     resetAll,
     toggleChartLine,
   };

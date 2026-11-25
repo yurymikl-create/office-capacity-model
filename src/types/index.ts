@@ -7,10 +7,6 @@ export type ParamKey = 'staff' | 'seats' | 'attendance';
 
 export type HorizonYears = 1 | 2 | 5 | 10;
 
-export type PresetId = 'base' | 'growth' | 'hybrid' | 'custom';
-
-export type PresetChoice = Exclude<PresetId, 'custom'>;
-
 export interface ModelEvent {
   id: string;
   year: number;
@@ -42,7 +38,6 @@ export interface ModelState {
   staff: ParamState;
   seats: ParamState;
   attendance: ParamState;
-  scenarioId: PresetId;
   chartPrefs: ChartPrefs;
 }
 

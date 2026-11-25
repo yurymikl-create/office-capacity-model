@@ -1,22 +1,13 @@
-import type { HorizonYears, PresetChoice, PresetId } from '../types';
+import type { HorizonYears } from '../types';
 import { HORIZONS, HORIZON_LABELS } from '../data/defaults';
-import { PRESETS } from '../data/presets';
 
 interface HeaderProps {
   horizonYears: HorizonYears;
-  scenarioId: PresetId;
   onHorizonChange: (value: HorizonYears) => void;
-  onPreset: (id: PresetChoice) => void;
   onReset: () => void;
 }
 
-export function Header({
-  horizonYears,
-  scenarioId,
-  onHorizonChange,
-  onPreset,
-  onReset,
-}: HeaderProps) {
+export function Header({ horizonYears, onHorizonChange, onReset }: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -52,25 +43,6 @@ export function Header({
                 <span>{HORIZON_LABELS[horizon]}</span>
               </label>
             ))}
-          </div>
-        </div>
-
-        <div className="control">
-          <span className="control__label">Scenario</span>
-          <div className="chips">
-            {PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                className="chip"
-                aria-pressed={scenarioId === preset.id}
-                title={preset.description}
-                onClick={() => onPreset(preset.id)}
-              >
-                {preset.label}
-              </button>
-            ))}
-            {scenarioId === 'custom' ? <span className="chip chip--static">Custom</span> : null}
           </div>
         </div>
 

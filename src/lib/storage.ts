@@ -6,7 +6,6 @@ import type {
   ModelEvent,
   ModelState,
   ParamState,
-  PresetId,
 } from '../types';
 import { createDefaultState, HORIZONS, STATE_VERSION } from '../data/defaults';
 import { createId } from './id';
@@ -20,7 +19,6 @@ export interface StorageLike {
 }
 
 const MODES: Mode[] = ['plateau', 'trend', 'events'];
-const PRESET_IDS: PresetId[] = ['base', 'growth', 'hybrid', 'custom'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -93,9 +91,6 @@ export function parseState(value: unknown, now: Date = new Date()): ModelState |
     staff: parseParam(value.staff, defaults.staff),
     seats: parseParam(value.seats, defaults.seats),
     attendance: parseParam(value.attendance, defaults.attendance),
-    scenarioId: PRESET_IDS.includes(value.scenarioId as PresetId)
-      ? (value.scenarioId as PresetId)
-      : 'custom',
     chartPrefs: parseChartPrefs(value.chartPrefs, defaults.chartPrefs),
   };
 }

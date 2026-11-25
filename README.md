@@ -21,22 +21,18 @@ Horizon 1 / 2 / 5 / 10 years; points are computed for `m = 0…N` (start month +
 
 Value guards: attendance is clamped to 0…100%, headcount ≥ 0, seats ≥ 1.
 
-## Presets and persistence
+## Defaults and persistence
 
-- **Baseline** — everything flat: 100 people, 100 seats, 60% attendance, 2-year horizon.
-- **Growth** — headcount on a trend of 2% of the base per month, 5-year horizon.
-- **Hybrid** — 160 people, 40% attendance (64 on site), 60 seats and a “+20 seats” event in August of the start year (2-year horizon).
+The model starts with 100 people, 100 seats, 60% attendance and a 2-year horizon beginning in January of the current year. A scenario is simply the current combination of parameters, the start month and the horizon — there are no saved presets to switch between.
 
-Presets define the whole state, including the start month (January of the current year) and the horizon. Any manual edit switches the scenario to “Custom”.
-
-The current state is autosaved to `localStorage` under `office-capacity-model:v1` (with version and shape validation). “Clear all” removes the key and restores the baseline scenario; the next write happens only after the next edit.
+The current state is autosaved to `localStorage` under `office-capacity-model:v1` (with version and shape validation). “Clear all” removes the key and restores the defaults; the next write happens only after the next edit.
 
 ## Commands
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # vitest: calculations, presets, storage
+npm test         # vitest: calculations, storage
 npm run lint     # oxlint
 npm run build    # tsc --noEmit && vite build → dist/
 npm run preview  # preview the built version locally
@@ -48,7 +44,6 @@ npm run preview  # preview the built version locally
 src/
   App.tsx                    page composition
   data/defaults.ts           defaults, month labels, parameter metadata
-  data/presets.ts            three presets
   hooks/useCapacityModel.ts  state, autosave, derived data
   lib/calc.ts                monthly expansion, crossing, deficit, aggregation
   lib/storage.ts             localStorage with validation
@@ -91,4 +86,4 @@ The build uses `base: './'`, so `dist` works from any subpath. `.github/workflow
 - One mode per parameter: switching modes mid-timeline is not supported.
 - No weekly day-by-day profile — monthly average attendance only.
 - No money, Excel or OCR; no backend and no network requests.
-- Custom named scenarios are not saved: three presets plus autosave of the current state.
+- Custom named scenarios are not saved: a scenario is defined by the current parameters only.

@@ -328,13 +328,6 @@ select {
   font-weight: 600;
 }
 
-.chip--static {
-  border-style: dashed;
-  border-color: var(--border-strong);
-  color: var(--muted-2);
-  cursor: default;
-}
-
 .btn {
   display: inline-flex;
   align-items: center;
