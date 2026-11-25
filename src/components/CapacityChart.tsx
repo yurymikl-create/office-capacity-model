@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Area,
+  Brush,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -11,8 +12,22 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { ChartPoint, ChartPrefs, Mode } from '../types';
+import type {
+  ChartLineKey,
+  ChartPoint,
+  ChartPrefs,
+  Granularity,
+  Mode,
+  ResolvedGranularity,
+} from '../types';
 import { formatInt } from '../lib/format';
+import {
+  clampViewport,
+  fullViewport,
+  panViewport,
+  zoomViewport,
+  type Viewport,
+} from '../lib/chartView';
 import { ChartTooltip } from './ChartTooltip';
 
 const COLORS = {
@@ -26,7 +41,7 @@ const COLORS = {
   muted: '#8a8a8a',
 };
 
-const LEGEND: { key: keyof ChartPrefs; label: string; color: string }[] = [
+const LEGEND: { key: ChartLineKey; label: string; color: string }[] = [
   { key: 'showStaff', label: 'Headcount', color: COLORS.staff },
   { key: 'showVisits', label: 'On-site', color: COLORS.visits },
   { key: 'showSeats', label: 'Seats', color: COLORS.seats },
@@ -37,13 +52,37 @@ const ZONES = [
   { label: 'Deficit', color: COLORS.danger },
 ];
 
+const GRANULARITY_OPTIONS: { value: Granularity; label: string; title: string }[] = [
+  {
+    value: 'auto',
+    label: 'Auto',
+    title: 'Auto: months up to 2 years, quarters up to 5 years, years beyond',
+  },
+  { value: 'month', label: 'M', title: 'Monthly' },
+  { value: 'quarter', label: 'Q', title: 'Quarterly' },
+  { value: 'year', label: 'Y', title: 'Yearly' },
+];
+
+const GRANULARITY_LABEL: Record<ResolvedGranularity, string> = {
+  month: 'Monthly',
+  quarter: 'Quarterly',
+  year: 'Yearly',
+};
+
+const UNIT_LABEL: Record<ResolvedGranularity, string> = {
+  month: 'months',
+  quarter: 'quarters',
+  year: 'years',
+};
+
 interface CapacityChartProps {
   points: ChartPoint[];
+  granularity: ResolvedGranularity;
   prefs: ChartPrefs;
-  isYearly: boolean;
   seatsMode: Mode;
-  crossing: { x: string; label: string } | null;
-  onToggle: (key: keyof ChartPrefs) => void;
+  crossing: { index: number; x: string; label: string; monthLabel: string } | null;
+  onToggle: (key: ChartLineKey) => void;
+  onGranularity: (value: Granularity) => void;
 }
 
 function niceStep(rawStep: number): number {
@@ -77,8 +116,8 @@ interface CrossingLabelProps {
 }
 
 /**
- * Crossing caption: a pill with a white background so it does not blend into
- * the lines, clamped to the plot bounds (otherwise the January label is clipped).
+ * Crossing caption: a pill with a dark background so it does not blend into
+ * the lines, clamped to the plot bounds.
  */
 function CrossingLabel({ text, chartWidth = 720, viewBox }: CrossingLabelProps) {
   const lineX = viewBox?.x;
@@ -134,16 +173,22 @@ function usePrefersReducedMotion(): boolean {
 
 export function CapacityChart({
   points,
+  granularity,
   prefs,
-  isYearly,
   seatsMode,
   crossing,
   onToggle,
+  onGranularity,
 }: CapacityChartProps) {
   const reducedMotion = usePrefersReducedMotion();
   const animationDuration = reducedMotion ? 0 : 300;
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(720);
+  const [viewport, setViewport] = useState<Viewport>(() => fullViewport(points.length));
+
+  useEffect(() => {
+    setViewport(fullViewport(points.length));
+  }, [points.length, granularity]);
 
   useEffect(() => {
     const element = canvasRef.current;
@@ -155,17 +200,83 @@ export function CapacityChart({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const element = canvasRef.current;
+    if (!element) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        const rect = element.getBoundingClientRect();
+        const plotLeft = 56;
+        const plotWidth = Math.max(1, rect.width - plotLeft - 20);
+        const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - plotLeft) / plotWidth));
+        const factor = event.deltaY > 0 ? 1.3 : 0.77;
+        setViewport((current) => {
+          const safe = clampViewport(current, points.length);
+          const anchor = safe.start + Math.round(ratio * (safe.end - safe.start));
+          return zoomViewport(safe, factor, points.length, anchor);
+        });
+        return;
+      }
+      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+        event.preventDefault();
+        const delta = Math.round(event.deltaX / 30);
+        if (delta !== 0) {
+          setViewport((current) =>
+            panViewport(clampViewport(current, points.length), delta, points.length),
+          );
+        }
+      }
+    };
+
+    element.addEventListener('wheel', handleWheel, { passive: false });
+    return () => element.removeEventListener('wheel', handleWheel);
+  }, [points.length]);
+
+  const view = useMemo(() => clampViewport(viewport, points.length), [viewport, points.length]);
+  const visiblePoints = useMemo(
+    () => points.slice(view.start, view.end + 1),
+    [points, view.start, view.end],
+  );
+  const yScale = useMemo(() => buildYScale(points), [points]);
+
+  const axisWidth = Math.max(240, chartWidth - 76);
+  const maxTicks = Math.max(3, Math.floor(axisWidth / 64));
+  const xInterval = Math.max(0, Math.ceil(visiblePoints.length / maxTicks) - 1);
+  const brushTickStep = Math.max(1, Math.ceil(points.length / 6));
+
+  const zoomBy = useCallback(
+    (factor: number) => {
+      setViewport((current) =>
+        zoomViewport(clampViewport(current, points.length), factor, points.length),
+      );
+    },
+    [points.length],
+  );
+
+  const fit = useCallback(() => setViewport(fullViewport(points.length)), [points.length]);
+
+  const crossingVisible =
+    crossing !== null && crossing.index >= view.start && crossing.index <= view.end;
+  const crossingPoint = crossingVisible && crossing ? (points[crossing.index] ?? null) : null;
+
+  const jumpToCrossing = useCallback(() => {
+    if (!crossing) return;
+    const span = Math.max(2, Math.min(view.end - view.start + 1, 6));
+    const start = crossing.index - Math.floor(span / 2);
+    setViewport(clampViewport({ start, end: start + span - 1 }, points.length));
+  }, [crossing, view.start, view.end, points.length]);
+
+  const first = points[view.start];
+  const last = points[view.end];
+  const rangeLabel =
+    first && last
+      ? `${first.bucketLabel} — ${last.bucketLabel} · ${view.end - view.start + 1} ${UNIT_LABEL[granularity]}`
+      : '';
+
   const zoneType: 'stepAfter' | 'linear' = seatsMode === 'events' ? 'stepAfter' : 'linear';
   const seatsLineType: 'stepAfter' | 'linear' = seatsMode === 'events' ? 'stepAfter' : 'linear';
-
-  const xInterval = isYearly ? 0 : points.length <= 14 ? 0 : points.length <= 26 ? 1 : 3;
-
-  const crossingPoint = useMemo(() => {
-    if (!crossing) return null;
-    return points.find((point) => point.chartLabel === crossing.x) ?? null;
-  }, [crossing, points]);
-
-  const yScale = useMemo(() => buildYScale(points), [points]);
 
   return (
     <section className="card chart-card" aria-labelledby="chart-title">
@@ -175,7 +286,9 @@ export function CapacityChart({
             Occupancy forecast
           </h2>
           <p className="card__hint">
-            {isYearly ? 'Yearly aggregation: year-end snapshot' : 'Monthly'} · people and seats
+            {granularity === 'month'
+              ? 'Monthly · people and seats'
+              : `${GRANULARITY_LABEL[granularity]} · people and seats · worst month per bucket`}
           </p>
         </div>
 
@@ -204,9 +317,58 @@ export function CapacityChart({
         </div>
       </div>
 
+      <div className="chart-toolbar">
+        <div className="segmented segmented--compact" role="radiogroup" aria-label="Chart scale">
+          {GRANULARITY_OPTIONS.map((option) => (
+            <label key={option.value} className="segmented__item" title={option.title}>
+              <input
+                type="radio"
+                name="chart-granularity"
+                value={option.value}
+                checked={prefs.granularity === option.value}
+                onChange={() => onGranularity(option.value)}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="chart-zoom">
+          <button
+            type="button"
+            className="zoom-button"
+            onClick={() => zoomBy(1.35)}
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <button type="button" className="zoom-button zoom-button--fit" onClick={fit}>
+            Fit
+          </button>
+          <button
+            type="button"
+            className="zoom-button"
+            onClick={() => zoomBy(0.75)}
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+        </div>
+
+        <span className="chart-range">{rangeLabel}</span>
+
+        {crossing && !crossingVisible ? (
+          <button type="button" className="chart-jump" onClick={jumpToCrossing}>
+            Crossing: {crossing.monthLabel} →
+          </button>
+        ) : null}
+      </div>
+
+      <p className="chart-hint">Ctrl/⌘ + scroll to zoom · drag the bar below to scroll</p>
+
       <div className="chart-card__canvas" ref={canvasRef}>
-        <ResponsiveContainer width="100%" height={360}>
-          <ComposedChart data={points} margin={{ top: 40, right: 20, bottom: 8, left: 0 }}>
+        <ResponsiveContainer width="100%" height={400}>
+          <ComposedChart data={points} margin={{ top: 40, right: 20, bottom: 0, left: 0 }}>
             <CartesianGrid stroke={COLORS.grid} vertical={false} />
             <XAxis
               dataKey="chartLabel"
@@ -315,7 +477,7 @@ export function CapacityChart({
               />
             ) : null}
 
-            {crossing ? (
+            {crossing && crossingVisible ? (
               <ReferenceLine
                 yAxisId="left"
                 x={crossing.x}
@@ -338,6 +500,33 @@ export function CapacityChart({
                 className="crossing-dot"
               />
             ) : null}
+
+            <Brush
+              dataKey="chartLabel"
+              height={30}
+              travellerWidth={8}
+              startIndex={view.start}
+              endIndex={view.end}
+              onChange={(range) => {
+                if (
+                  typeof range.startIndex === 'number' &&
+                  typeof range.endIndex === 'number'
+                ) {
+                  setViewport(
+                    clampViewport(
+                      { start: range.startIndex, end: range.endIndex },
+                      points.length,
+                    ),
+                  );
+                }
+              }}
+              tickFormatter={(value, index) =>
+                index % brushTickStep === 0 ? String(value) : ''
+              }
+              fill="rgba(255, 255, 255, 0.03)"
+              stroke="#2c2c2c"
+              ariaLabel="Timeline scrollbar"
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

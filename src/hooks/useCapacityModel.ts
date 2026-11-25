@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  ChartPrefs,
-  HorizonYears,
+  ChartLineKey,
+  Granularity,
   ModelEvent,
   ModelState,
   Mode,
   ParamKey,
   ParamState,
 } from '../types';
-import { createDefaultState } from '../data/defaults';
-import { addMonths, buildMonthly, chartSeries, compareEvents, summarize } from '../lib/calc';
+import { createDefaultState, MAX_HORIZON_MONTHS, MIN_HORIZON_MONTHS } from '../data/defaults';
+import { addMonths, buildMonthly, compareEvents, summarize } from '../lib/calc';
+import { aggregatePoints, bucketIndexForMonth, resolveGranularity } from '../lib/chartView';
 import { clearState, loadState, saveState } from '../lib/storage';
 import { createId } from '../lib/id';
 
@@ -45,17 +46,26 @@ export function useCapacityModel() {
 
   const points = useMemo(() => buildMonthly(state), [state]);
   const summary = useMemo(() => summarize(points), [points]);
-  const chart = useMemo(() => chartSeries(state, points), [state, points]);
+  const granularity = resolveGranularity(state.chartPrefs.granularity, state.horizonMonths);
+  const chartPoints = useMemo(
+    () => aggregatePoints(points, granularity),
+    [points, granularity],
+  );
 
   const crossing = useMemo(() => {
     if (summary.crossingIndex === null) return null;
     const point = points[summary.crossingIndex];
     if (!point) return null;
+    const index = bucketIndexForMonth(chartPoints, point.year, point.month);
+    const bucket = chartPoints[index];
+    if (!bucket) return null;
     return {
-      x: chart.isYearly ? String(point.year) : point.shortLabel,
+      index,
+      x: bucket.chartLabel,
       label: `Seats run out: ${point.label}`,
+      monthLabel: point.label,
     };
-  }, [summary.crossingIndex, points, chart.isYearly]);
+  }, [summary.crossingIndex, points, chartPoints]);
 
   const updateParam = useCallback((key: ParamKey, patch: Partial<ParamState>) => {
     setState((prev) => withParam(prev, key, { ...prev[key], ...patch }));
@@ -107,8 +117,9 @@ export function useCapacityModel() {
     });
   }, []);
 
-  const setHorizon = useCallback((horizonYears: HorizonYears) => {
-    setState((prev) => ({ ...prev, horizonYears }));
+  const setHorizonMonths = useCallback((months: number) => {
+    const next = Math.min(MAX_HORIZON_MONTHS, Math.max(MIN_HORIZON_MONTHS, Math.round(months)));
+    setState((prev) => ({ ...prev, horizonMonths: next }));
   }, []);
 
   const setStart = useCallback((startYear: number, startMonth: number) => {
@@ -125,10 +136,17 @@ export function useCapacityModel() {
     setState(createDefaultState());
   }, []);
 
-  const toggleChartLine = useCallback((key: keyof ChartPrefs) => {
+  const toggleChartLine = useCallback((key: ChartLineKey) => {
     setState((prev) => ({
       ...prev,
       chartPrefs: { ...prev.chartPrefs, [key]: !prev.chartPrefs[key] },
+    }));
+  }, []);
+
+  const setGranularity = useCallback((next: Granularity) => {
+    setState((prev) => ({
+      ...prev,
+      chartPrefs: { ...prev.chartPrefs, granularity: next },
     }));
   }, []);
 
@@ -136,8 +154,8 @@ export function useCapacityModel() {
     state,
     points,
     summary,
-    chartPoints: chart.points,
-    isYearly: chart.isYearly,
+    chartPoints,
+    granularity,
     crossing,
     setBase,
     setMode,
@@ -145,10 +163,11 @@ export function useCapacityModel() {
     addEvent,
     updateEvent,
     removeEvent,
-    setHorizon,
+    setHorizonMonths,
     setStart,
     resetAll,
     toggleChartLine,
+    setGranularity,
   };
 }
 

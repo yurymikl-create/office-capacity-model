@@ -1,13 +1,14 @@
-import type { HorizonYears } from '../types';
-import { HORIZONS, HORIZON_LABELS } from '../data/defaults';
+import { HORIZON_PRESETS, MAX_HORIZON_MONTHS, MIN_HORIZON_MONTHS } from '../data/defaults';
+import { formatDuration } from '../lib/format';
+import { NumberField } from './NumberField';
 
 interface HeaderProps {
-  horizonYears: HorizonYears;
-  onHorizonChange: (value: HorizonYears) => void;
+  horizonMonths: number;
+  onHorizonChange: (months: number) => void;
   onReset: () => void;
 }
 
-export function Header({ horizonYears, onHorizonChange, onReset }: HeaderProps) {
+export function Header({ horizonMonths, onHorizonChange, onReset }: HeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header__brand">
@@ -28,21 +29,33 @@ export function Header({ horizonYears, onHorizonChange, onReset }: HeaderProps) 
       </div>
 
       <div className="app-header__controls">
-        <div className="control">
+        <div className="control control--horizon">
           <span className="control__label">Horizon</span>
-          <div className="segmented" role="radiogroup" aria-label="Planning horizon">
-            {HORIZONS.map((horizon) => (
-              <label key={horizon} className="segmented__item">
-                <input
-                  type="radio"
-                  name="horizon"
-                  value={horizon}
-                  checked={horizonYears === horizon}
-                  onChange={() => onHorizonChange(horizon)}
-                />
-                <span>{HORIZON_LABELS[horizon]}</span>
-              </label>
-            ))}
+          <div className="horizon">
+            <div className="chips">
+              {HORIZON_PRESETS.map((preset) => (
+                <button
+                  key={preset.months}
+                  type="button"
+                  className="chip"
+                  aria-pressed={horizonMonths === preset.months}
+                  onClick={() => onHorizonChange(preset.months)}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="horizon__custom">
+              <NumberField
+                value={horizonMonths}
+                min={MIN_HORIZON_MONTHS}
+                max={MAX_HORIZON_MONTHS}
+                onCommit={onHorizonChange}
+                ariaLabel="Horizon in months"
+                suffix="mo"
+              />
+              <span className="horizon__hint">{formatDuration(horizonMonths)}</span>
+            </div>
           </div>
         </div>
 

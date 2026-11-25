@@ -22,8 +22,8 @@ export default function App() {
   return (
     <div className="app">
       <Header
-        horizonYears={state.horizonYears}
-        onHorizonChange={model.setHorizon}
+        horizonMonths={state.horizonMonths}
+        onHorizonChange={model.setHorizonMonths}
         onReset={handleReset}
       />
 
@@ -42,7 +42,7 @@ export default function App() {
               param={state[key]}
               startYear={state.startYear}
               startMonth={state.startMonth}
-              horizonYears={state.horizonYears}
+              horizonMonths={state.horizonMonths}
               onBase={(value) => model.setBase(key, value)}
               onMode={(mode) => model.setMode(key, mode)}
               onStep={(value) => model.setStep(key, value)}
@@ -57,10 +57,11 @@ export default function App() {
           <CapacityChart
             points={model.chartPoints}
             prefs={state.chartPrefs}
-            isYearly={model.isYearly}
+            granularity={model.granularity}
             seatsMode={state.seats.mode}
             crossing={model.crossing}
             onToggle={model.toggleChartLine}
+            onGranularity={model.setGranularity}
           />
           <SummaryCards summary={summary} />
           <AlertBanner summary={summary} />

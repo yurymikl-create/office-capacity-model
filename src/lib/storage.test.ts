@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createDefaultState } from '../data/defaults';
 import type { StorageLike } from './storage';
-import { clearState, loadState, parseState, saveState, STORAGE_KEY } from './storage';
+import {
+  clearState,
+  LEGACY_STORAGE_KEY,
+  loadState,
+  parseState,
+  saveState,
+  STORAGE_KEY,
+} from './storage';
 
 const NOW = new Date(2026, 0, 15);
 
@@ -99,9 +106,73 @@ describe('storage', () => {
     expect(parsed?.attendance.events[0]?.month).toBe(11);
   });
 
-  it('rejects state with an invalid horizon', () => {
-    const raw = { ...createDefaultState(NOW), horizonYears: 3 };
-    expect(parseState(raw, NOW)).toBeNull();
+  it('clamps the horizon into 1..120 months', () => {
+    const tooLong = parseState(
+      { ...createDefaultState(NOW), horizonMonths: 500 },
+      NOW,
+    );
+    expect(tooLong?.horizonMonths).toBe(120);
+
+    const tooShort = parseState(
+      { ...createDefaultState(NOW), horizonMonths: 0 },
+      NOW,
+    );
+    expect(tooShort?.horizonMonths).toBe(1);
+  });
+
+  it('migrates v1 horizonYears into horizonMonths', () => {
+    const legacy = {
+      version: 1,
+      startYear: 2026,
+      startMonth: 0,
+      horizonYears: 5,
+      scenarioId: 'growth',
+      staff: { base: 120, mode: 'trend', step: 2, events: [] },
+      seats: { base: 90, mode: 'plateau', step: 0, events: [] },
+      attendance: { base: 50, mode: 'plateau', step: 0, events: [] },
+      chartPrefs: { showStaff: true, showVisits: false, showSeats: true },
+    };
+
+    const parsed = parseState(legacy, NOW);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.version).toBe(2);
+    expect(parsed?.horizonMonths).toBe(60);
+    expect(parsed?.chartPrefs.granularity).toBe('auto');
+    expect(parsed?.chartPrefs.showVisits).toBe(false);
+    expect(parsed && 'scenarioId' in parsed).toBe(false);
+  });
+
+  it('reads and migrates the legacy storage key', () => {
+    const legacy = {
+      version: 1,
+      startYear: 2026,
+      startMonth: 0,
+      horizonYears: 1,
+      scenarioId: 'base',
+      staff: { base: 80, mode: 'plateau', step: 0, events: [] },
+      seats: { base: 70, mode: 'plateau', step: 0, events: [] },
+      attendance: { base: 55, mode: 'plateau', step: 0, events: [] },
+      chartPrefs: { showStaff: true, showVisits: true, showSeats: true },
+    };
+    const storage = createFakeStorage({ [LEGACY_STORAGE_KEY]: JSON.stringify(legacy) });
+
+    const loaded = loadState(storage);
+    expect(loaded.horizonMonths).toBe(12);
+    expect(loaded.staff.base).toBe(80);
+    expect(storage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
+    expect(storage.getItem(STORAGE_KEY)).not.toBeNull();
+  });
+
+  it('falls back to auto granularity for invalid values', () => {
+    const state = createDefaultState(NOW);
+    const parsed = parseState(
+      {
+        ...state,
+        chartPrefs: { ...state.chartPrefs, granularity: 'week' },
+      },
+      NOW,
+    );
+    expect(parsed?.chartPrefs.granularity).toBe('auto');
   });
 
   it('clears the storage', () => {

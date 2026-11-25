@@ -18,6 +18,16 @@ export function formatPercentValue(value: number): string {
   return `${intFormatter.format(Math.round(value))}%`;
 }
 
+export function formatDuration(months: number): string {
+  const total = Math.max(1, Math.round(months));
+  const years = Math.floor(total / 12);
+  const rest = total % 12;
+  const parts: string[] = [];
+  if (years > 0) parts.push(`${years} ${years === 1 ? 'yr' : 'yrs'}`);
+  if (rest > 0) parts.push(`${rest} mo`);
+  return parts.join(' ');
+}
+
 export function monthLabel(year: number, month: number): string {
   return `${MONTHS_SHORT[month]} ${year}`;
 }

@@ -3,9 +3,7 @@ import type { ModelState } from '../types';
 import { createDefaultState } from '../data/defaults';
 import {
   addMonths,
-  aggregateYearly,
   buildMonthly,
-  chartSeries,
   eventWindowStatus,
   findCrossingIndex,
   summarize,
@@ -214,47 +212,14 @@ describe('crossing and deficit', () => {
   });
 });
 
-describe('yearly aggregation', () => {
-  it('only kicks in for horizons longer than two years', () => {
-    const state = createDefaultState(NOW);
-    expect(chartSeries(state, buildMonthly(state)).isYearly).toBe(false);
-
-    const twoYears = { ...state, horizonYears: 2 as const };
-    expect(chartSeries(twoYears, buildMonthly(twoYears)).points).toHaveLength(25);
-
-    const fiveYears = { ...state, horizonYears: 5 as const };
-    const monthly = buildMonthly(fiveYears);
-    const chart = chartSeries(fiveYears, monthly);
-    expect(monthly).toHaveLength(61);
-    expect(chart.isYearly).toBe(true);
-    expect(chart.points.map((point) => point.chartLabel)).toEqual([
-      '2026',
-      '2027',
-      '2028',
-      '2029',
-      '2030',
-      '2031',
-    ]);
-    expect(chart.points[chart.points.length - 1]?.key).toBe(monthly[monthly.length - 1]?.key);
-  });
-
-  it('takes the last month of every year', () => {
-    const state = { ...createDefaultState(NOW), horizonYears: 5 as const };
-    const yearly = aggregateYearly(buildMonthly(state));
-
-    expect(yearly[0]?.label).toBe('Dec 2026');
-    expect(yearly[1]?.label).toBe('Dec 2027');
-  });
-});
-
 describe('eventWindowStatus', () => {
   it('distinguishes past, horizon and future', () => {
     const past = { id: '1', year: 2025, month: 11, kind: 'delta' as const, value: 1 };
     const within = { id: '2', year: 2026, month: 6, kind: 'delta' as const, value: 1 };
     const future = { id: '3', year: 2029, month: 0, kind: 'delta' as const, value: 1 };
 
-    expect(eventWindowStatus(past, 2026, 0, 2)).toBe('past');
-    expect(eventWindowStatus(within, 2026, 0, 2)).toBe('within');
-    expect(eventWindowStatus(future, 2026, 0, 2)).toBe('future');
+    expect(eventWindowStatus(past, 2026, 0, 24)).toBe('past');
+    expect(eventWindowStatus(within, 2026, 0, 24)).toBe('within');
+    expect(eventWindowStatus(future, 2026, 0, 24)).toBe('future');
   });
 });

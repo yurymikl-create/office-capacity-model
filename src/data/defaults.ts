@@ -1,4 +1,4 @@
-import type { HorizonYears, ModelState, ParamKey, ParamMeta } from '../types';
+import type { ModelState, ParamKey, ParamMeta } from '../types';
 
 export const MONTHS_SHORT = [
   'Jan',
@@ -30,14 +30,16 @@ export const MONTHS_NOMINATIVE = [
   'December',
 ] as const;
 
-export const HORIZONS: HorizonYears[] = [1, 2, 5, 10];
+export const MIN_HORIZON_MONTHS = 1;
 
-export const HORIZON_LABELS: Record<HorizonYears, string> = {
-  1: '1 yr',
-  2: '2 yrs',
-  5: '5 yrs',
-  10: '10 yrs',
-};
+export const MAX_HORIZON_MONTHS = 120;
+
+export const HORIZON_PRESETS: { months: number; label: string }[] = [
+  { months: 12, label: '1 yr' },
+  { months: 24, label: '2 yrs' },
+  { months: 60, label: '5 yrs' },
+  { months: 120, label: '10 yrs' },
+];
 
 export const PARAM_ORDER: ParamKey[] = ['staff', 'seats', 'attendance'];
 
@@ -92,17 +94,22 @@ export const DEFAULT_VALUES = {
   attendance: 60,
 } as const;
 
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export function createDefaultState(now: Date = new Date()): ModelState {
   return {
     version: STATE_VERSION,
     startYear: now.getFullYear(),
     startMonth: 0,
-    horizonYears: 2,
+    horizonMonths: 24,
     staff: { base: DEFAULT_VALUES.staff, mode: 'plateau', step: 0, events: [] },
     seats: { base: DEFAULT_VALUES.seats, mode: 'plateau', step: 0, events: [] },
     attendance: { base: DEFAULT_VALUES.attendance, mode: 'plateau', step: 0, events: [] },
-    chartPrefs: { showStaff: true, showVisits: true, showSeats: true },
+    chartPrefs: {
+      showStaff: true,
+      showVisits: true,
+      showSeats: true,
+      granularity: 'auto',
+    },
   };
 }

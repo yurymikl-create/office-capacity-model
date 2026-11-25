@@ -1,12 +1,4 @@
-import type {
-  ChartPoint,
-  HorizonYears,
-  ModelEvent,
-  ModelState,
-  MonthPoint,
-  ParamState,
-  Summary,
-} from '../types';
+import type { ModelEvent, ModelState, MonthPoint, ParamState, Summary } from '../types';
 import { monthLabel, shortMonthLabel } from './format';
 
 export interface TimelineSlot {
@@ -26,9 +18,9 @@ export function addMonths(year: number, month: number, offset: number): { year: 
 export function buildTimeline(
   startYear: number,
   startMonth: number,
-  horizonYears: HorizonYears,
+  horizonMonths: number,
 ): TimelineSlot[] {
-  const count = horizonYears * 12 + 1;
+  const count = Math.max(1, Math.round(horizonMonths)) + 1;
   return Array.from({ length: count }, (_, index) => ({
     index,
     ...addMonths(startYear, startMonth, index),
@@ -79,7 +71,7 @@ export function resolveSeries(
 }
 
 export function buildMonthly(state: ModelState): MonthPoint[] {
-  const timeline = buildTimeline(state.startYear, state.startMonth, state.horizonYears);
+  const timeline = buildTimeline(state.startYear, state.startMonth, state.horizonMonths);
   const staff = resolveSeries(state.staff, timeline, (value) => Math.max(0, value));
   const seats = resolveSeries(state.seats, timeline, (value) => Math.max(1, value));
   const attendance = resolveSeries(state.attendance, timeline, (value) => clamp(value, 0, 100));
@@ -145,38 +137,14 @@ export function summarize(points: MonthPoint[]): Summary {
   };
 }
 
-/** For horizons longer than 24 months: a snapshot at the end of each year. */
-export function aggregateYearly(points: MonthPoint[]): ChartPoint[] {
-  const lastByYear = new Map<number, MonthPoint>();
-  for (const point of points) {
-    lastByYear.set(point.year, point);
-  }
-  return [...lastByYear.values()].map((point) => ({ ...point, chartLabel: String(point.year) }));
-}
-
-export function toMonthlyChartPoints(points: MonthPoint[]): ChartPoint[] {
-  return points.map((point) => ({ ...point, chartLabel: point.shortLabel }));
-}
-
-export function chartSeries(
-  state: ModelState,
-  points: MonthPoint[],
-): { points: ChartPoint[]; isYearly: boolean } {
-  const isYearly = state.horizonYears > 2;
-  return {
-    points: isYearly ? aggregateYearly(points) : toMonthlyChartPoints(points),
-    isYearly,
-  };
-}
-
 export function eventWindowStatus(
   event: ModelEvent,
   startYear: number,
   startMonth: number,
-  horizonYears: HorizonYears,
+  horizonMonths: number,
 ): EventWindowStatus {
   const offset = (event.year - startYear) * 12 + (event.month - startMonth);
   if (offset < 0) return 'past';
-  if (offset > horizonYears * 12) return 'future';
+  if (offset > horizonMonths) return 'future';
   return 'within';
 }

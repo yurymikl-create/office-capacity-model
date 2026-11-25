@@ -11,7 +11,7 @@ Utilization = On-site[m] / Seats[m] × 100
 Crossing    = first month where On-site >= Seats
 ```
 
-Horizon 1 / 2 / 5 / 10 years; points are computed for `m = 0…N` (start month + 12 × years). The table and the summary are always monthly; the chart aggregates by year only for 5- and 10-year horizons (2 years is 24 months, so the “> 24” condition does not apply).
+Horizon is configurable from 1 to 120 months with quick presets for 1/2/5/10 years; points are computed for `m = 0…N` (start month + horizon). The table and the summary are always monthly; the chart can be aggregated by quarter or year (see “Chart view”).
 
 ## Parameter modes
 
@@ -23,16 +23,16 @@ Value guards: attendance is clamped to 0…100%, headcount ≥ 0, seats ≥ 1.
 
 ## Defaults and persistence
 
-The model starts with 100 people, 100 seats, 60% attendance and a 2-year horizon beginning in January of the current year. A scenario is simply the current combination of parameters, the start month and the horizon — there are no saved presets to switch between.
+The model starts with 100 people, 100 seats, 60% attendance and a 24-month horizon beginning in January of the current year. The horizon field accepts any whole number of months from 1 to 120; the quick chips (1/2/5/10 years) simply fill it. A scenario is the current combination of parameters, the start month and the horizon — there are no saved presets to switch between.
 
-The current state is autosaved to `localStorage` under `office-capacity-model:v1` (with version and shape validation). “Clear all” removes the key and restores the defaults; the next write happens only after the next edit.
+The current state is autosaved to `localStorage` under `office-capacity-model:state` (schema version 2). A state saved by the previous version (`office-capacity-model:v1`, with `horizonYears` and `scenarioId`) is migrated automatically: years become months, the scenario label is dropped, and the legacy key is removed. “Clear all” removes both keys and restores the defaults; the next write happens only after the next edit.
 
 ## Commands
 
 ```bash
 npm install
 npm run dev      # http://localhost:5173
-npm test         # vitest: calculations, storage
+npm test         # vitest: calculations, chart view, storage
 npm run lint     # oxlint
 npm run build    # tsc --noEmit && vite build → dist/
 npm run preview  # preview the built version locally
@@ -45,8 +45,9 @@ src/
   App.tsx                    page composition
   data/defaults.ts           defaults, month labels, parameter metadata
   hooks/useCapacityModel.ts  state, autosave, derived data
-  lib/calc.ts                monthly expansion, crossing, deficit, aggregation
-  lib/storage.ts             localStorage with validation
+  lib/calc.ts                monthly expansion, crossing, deficit
+  lib/chartView.ts           granularity, worst-month buckets, viewport zoom/pan
+  lib/storage.ts             localStorage with validation and v1 → v2 migration
   lib/format.ts              en-US formatting and month labels
   components/                parameter cards, events table, chart, summary, table
 ```
@@ -58,6 +59,15 @@ src/
 - The green/red fill is a stack of three `Area` series: the base `min(on-site, seats)`, green `max(0, seats − on-site)`, red `max(0, on-site − seats)`. This paints exactly the gap between the lines.
 - The crossing marker is a `ReferenceLine` plus a `ReferenceDot`; the caption sits in a pill with a white background, clamped to the plot edges, with a 300 ms fade-in.
 - The Y axis uses a hand-calculated “round” step (`niceStep`) so ticks never look like 55/110/165.
+
+## Chart view
+
+- **Scale:** `Auto | M | Q | Y`. Auto uses months up to 24 months, quarters up to 60, years beyond; a manual choice overrides it and is saved with the state.
+- **Aggregation rule:** each quarter/year is represented by its **worst month** — maximum deficit first, then maximum utilization, then the earliest month. All values of a bucket come from that single month, so a red month is never hidden by averaging or by a calm year-end. Tooltips show the bucket plus “worst month: Aug 2026”.
+- **Scroll:** the brush under the chart pans the timeline when dragged and resizes the window with its handles; the current range is printed in the toolbar. Horizontal trackpad scrolling works over the chart as well.
+- **Zoom:** `− / Fit / +` buttons (25% steps, at least two buckets) and `Ctrl/⌘ + scroll` with the cursor as the anchor. The Y scale stays stable while scrolling so the axis does not jump.
+- **Crossing outside the window:** the vertical marker is hidden and a `Crossing: Nov 2028 →` chip appears; clicking it centres the window on that bucket.
+- The month-level table, KPIs and alerts always use all monthly points, regardless of the current view.
 
 ## Design
 
@@ -87,3 +97,4 @@ The build uses `base: './'`, so `dist` works from any subpath. `.github/workflow
 - No weekly day-by-day profile — monthly average attendance only.
 - No money, Excel or OCR; no backend and no network requests.
 - Custom named scenarios are not saved: a scenario is defined by the current parameters only.
+- Pinch-to-zoom on touch screens is not implemented; the brush and the zoom buttons work on touch devices.

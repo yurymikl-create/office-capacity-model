@@ -200,6 +200,31 @@ select {
   text-transform: uppercase;
 }
 
+.control--horizon {
+  gap: 8px;
+}
+
+.horizon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.horizon__custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+.horizon__hint {
+  color: var(--muted-2);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(380px, 40fr) minmax(0, 60fr);
@@ -711,6 +736,115 @@ input[type='range']::-moz-range-thumb {
   margin-top: 10px;
 }
 
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.segmented--compact {
+  padding: 2px;
+}
+
+.segmented--compact .segmented__item span {
+  min-width: 34px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+.chart-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoom-button {
+  min-width: 32px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.zoom-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.zoom-button--fit {
+  padding: 0 12px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.chart-range {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chart-jump {
+  padding: 5px 12px;
+  border: 1px solid rgba(255, 77, 64, 0.45);
+  border-radius: var(--pill);
+  background: rgba(255, 77, 64, 0.08);
+  color: var(--danger-dim);
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.chart-jump:hover {
+  border-color: var(--danger);
+  background: rgba(255, 77, 64, 0.14);
+}
+
+.chart-hint {
+  margin-top: 8px;
+  color: var(--muted-2);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.recharts-brush-texts text {
+  fill: var(--text-dim);
+  font-size: 10px;
+}
+
+.recharts-brush-traveller rect {
+  fill: var(--accent);
+}
+
+.recharts-brush-traveller line {
+  stroke: var(--bg);
+}
+
+.recharts-brush-slide {
+  fill: rgba(0, 246, 255, 0.2);
+}
+
+.recharts-brush > rect:first-child {
+  fill: rgba(255, 255, 255, 0.05);
+}
+
 .chart-card__canvas text {
   font-family: var(--font-ui);
 }
@@ -808,6 +942,13 @@ input[type='range']::-moz-range-thumb {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+.chart-tooltip__sub {
+  margin-top: -4px;
+  margin-bottom: 8px;
+  color: var(--muted-2);
+  font-size: 10px;
 }
 
 .chart-tooltip__rows {
@@ -1116,6 +1257,11 @@ input[type='range']::-moz-range-thumb {
   }
 
   .control + .control {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .horizon__custom {
     padding-left: 0;
     border-left: none;
   }

@@ -1,4 +1,4 @@
-import type { HorizonYears, ModelEvent, Mode, ParamKey, ParamState } from '../types';
+import type { ModelEvent, Mode, ParamKey, ParamState } from '../types';
 import { PARAM_META } from '../data/defaults';
 import { formatNumber } from '../lib/format';
 import { ModeTabs } from './ModeTabs';
@@ -10,7 +10,7 @@ interface ParamCardProps {
   param: ParamState;
   startYear: number;
   startMonth: number;
-  horizonYears: HorizonYears;
+  horizonMonths: number;
   onBase: (value: number) => void;
   onMode: (mode: Mode) => void;
   onStep: (value: number) => void;
@@ -24,7 +24,7 @@ export function ParamCard({
   param,
   startYear,
   startMonth,
-  horizonYears,
+  horizonMonths,
   onBase,
   onMode,
   onStep,
@@ -107,7 +107,7 @@ export function ParamCard({
           events={param.events}
           startYear={startYear}
           startMonth={startMonth}
-          horizonYears={horizonYears}
+          horizonMonths={horizonMonths}
           supportsAbsolute={meta.supportsAbsoluteEvents}
           valueSuffix={meta.unitShort}
           onChange={onUpdateEvent}

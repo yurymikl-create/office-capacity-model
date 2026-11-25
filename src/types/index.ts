@@ -5,7 +5,9 @@ export type EventKind = 'delta' | 'absolute';
 
 export type ParamKey = 'staff' | 'seats' | 'attendance';
 
-export type HorizonYears = 1 | 2 | 5 | 10;
+export type Granularity = 'auto' | 'month' | 'quarter' | 'year';
+
+export type ResolvedGranularity = Exclude<Granularity, 'auto'>;
 
 export interface ModelEvent {
   id: string;
@@ -28,13 +30,17 @@ export interface ChartPrefs {
   showStaff: boolean;
   showVisits: boolean;
   showSeats: boolean;
+  granularity: Granularity;
 }
+
+export type ChartLineKey = 'showStaff' | 'showVisits' | 'showSeats';
 
 export interface ModelState {
   version: number;
   startYear: number;
   startMonth: number;
-  horizonYears: HorizonYears;
+  /** Planning horizon in months, 1..120. */
+  horizonMonths: number;
   staff: ParamState;
   seats: ParamState;
   attendance: ParamState;
@@ -65,8 +71,14 @@ export interface MonthPoint {
 }
 
 export interface ChartPoint extends MonthPoint {
-  /** X-axis label: month for short horizons, year for aggregation. */
+  /** Short label for the X axis: "Jan 26", "Q1 26" or "2026". */
   chartLabel: string;
+  /** Full bucket label for tooltips: "Jan 2026", "Q1 2026" or "2026". */
+  bucketLabel: string;
+  bucketKind: ResolvedGranularity;
+  /** Last month included in the bucket (used to place the crossing marker). */
+  bucketEndYear: number;
+  bucketEndMonth: number;
 }
 
 export interface Summary {

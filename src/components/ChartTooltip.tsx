@@ -33,10 +33,12 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
   const point = payload[0]?.payload;
   if (!point) return null;
+  const isBucket = point.bucketKind !== 'month';
 
   return (
     <div className="chart-tooltip">
-      <p className="chart-tooltip__title">{point.label}</p>
+      <p className="chart-tooltip__title">{isBucket ? point.bucketLabel : point.label}</p>
+      {isBucket ? <p className="chart-tooltip__sub">worst month: {point.label}</p> : null}
       <dl className="chart-tooltip__rows">
         <Row label="Headcount" value={`${formatInt(point.staff)} people`} />
         <Row label="Seats" value={`${formatInt(point.seats)} seats`} />

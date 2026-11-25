@@ -1,16 +1,24 @@
 import type {
   ChartPrefs,
   EventKind,
-  HorizonYears,
+  Granularity,
   Mode,
   ModelEvent,
   ModelState,
   ParamState,
 } from '../types';
-import { createDefaultState, HORIZONS, STATE_VERSION } from '../data/defaults';
+import {
+  createDefaultState,
+  MAX_HORIZON_MONTHS,
+  MIN_HORIZON_MONTHS,
+  STATE_VERSION,
+} from '../data/defaults';
 import { createId } from './id';
 
-export const STORAGE_KEY = 'office-capacity-model:v1';
+export const STORAGE_KEY = 'office-capacity-model:state';
+export const LEGACY_STORAGE_KEY = 'office-capacity-model:v1';
+
+const LEGACY_VERSION = 1;
 
 export interface StorageLike {
   getItem(key: string): string | null;
@@ -19,6 +27,7 @@ export interface StorageLike {
 }
 
 const MODES: Mode[] = ['plateau', 'trend', 'events'];
+const GRANULARITIES: Granularity[] = ['auto', 'month', 'quarter', 'year'];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -66,28 +75,43 @@ function parseChartPrefs(value: unknown, fallback: ChartPrefs): ChartPrefs {
     showStaff: typeof value.showStaff === 'boolean' ? value.showStaff : fallback.showStaff,
     showVisits: typeof value.showVisits === 'boolean' ? value.showVisits : fallback.showVisits,
     showSeats: typeof value.showSeats === 'boolean' ? value.showSeats : fallback.showSeats,
+    granularity: GRANULARITIES.includes(value.granularity as Granularity)
+      ? (value.granularity as Granularity)
+      : fallback.granularity,
   };
+}
+
+function parseHorizonMonths(
+  value: Record<string, unknown>,
+  version: number,
+  fallback: number,
+): number {
+  const raw =
+    version === LEGACY_VERSION
+      ? asFiniteNumber(value.horizonYears)
+      : asFiniteNumber(value.horizonMonths);
+  if (raw === null) return fallback;
+  const months = version === LEGACY_VERSION ? raw * 12 : raw;
+  return Math.min(MAX_HORIZON_MONTHS, Math.max(MIN_HORIZON_MONTHS, Math.round(months)));
 }
 
 /** Returns null when the data is incompatible with the current model version. */
 export function parseState(value: unknown, now: Date = new Date()): ModelState | null {
-  if (!isRecord(value) || value.version !== STATE_VERSION) return null;
+  if (!isRecord(value)) return null;
+  const version = asFiniteNumber(value.version);
+  if (version !== LEGACY_VERSION && version !== STATE_VERSION) return null;
 
   const defaults = createDefaultState(now);
   const startYear = asFiniteNumber(value.startYear);
   const startMonth = asFiniteNumber(value.startMonth);
-  const horizonYears = HORIZONS.includes(value.horizonYears as HorizonYears)
-    ? (value.horizonYears as HorizonYears)
-    : null;
-
-  if (startYear === null || startMonth === null || horizonYears === null) return null;
+  if (startYear === null || startMonth === null) return null;
   if (startYear < 1990 || startYear > 2200 || startMonth < 0 || startMonth > 11) return null;
 
   return {
     version: STATE_VERSION,
     startYear: Math.round(startYear),
     startMonth: Math.round(startMonth),
-    horizonYears,
+    horizonMonths: parseHorizonMonths(value, version, defaults.horizonMonths),
     staff: parseParam(value.staff, defaults.staff),
     seats: parseParam(value.seats, defaults.seats),
     attendance: parseParam(value.attendance, defaults.attendance),
@@ -108,8 +132,22 @@ export function loadState(storage: StorageLike | null = getBrowserStorage()): Mo
   if (!storage) return createDefaultState();
   try {
     const raw = storage.getItem(STORAGE_KEY);
-    if (!raw) return createDefaultState();
-    return parseState(JSON.parse(raw)) ?? createDefaultState();
+    if (raw) {
+      const parsed = parseState(JSON.parse(raw));
+      if (parsed) return parsed;
+    }
+
+    const legacyRaw = storage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const migrated = parseState(JSON.parse(legacyRaw));
+      if (migrated) {
+        saveState(migrated, storage);
+        storage.removeItem(LEGACY_STORAGE_KEY);
+        return migrated;
+      }
+    }
+
+    return createDefaultState();
   } catch {
     return createDefaultState();
   }
@@ -131,6 +169,7 @@ export function clearState(storage: StorageLike | null = getBrowserStorage()): v
   if (!storage) return;
   try {
     storage.removeItem(STORAGE_KEY);
+    storage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
     /* ignore */
   }

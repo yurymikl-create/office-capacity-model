@@ -1,4 +1,4 @@
-import type { HorizonYears, ModelEvent, ParamKey } from '../types';
+import type { ModelEvent, ParamKey } from '../types';
 import { MONTHS_NOMINATIVE, PARAM_META } from '../data/defaults';
 import { eventWindowStatus } from '../lib/calc';
 import { NumberField } from './NumberField';
@@ -8,7 +8,7 @@ interface EventsTableProps {
   events: ModelEvent[];
   startYear: number;
   startMonth: number;
-  horizonYears: HorizonYears;
+  horizonMonths: number;
   supportsAbsolute: boolean;
   valueSuffix: string;
   onChange: (id: string, patch: Partial<ModelEvent>) => void;
@@ -21,7 +21,7 @@ export function EventsTable({
   events,
   startYear,
   startMonth,
-  horizonYears,
+  horizonMonths,
   supportsAbsolute,
   valueSuffix,
   onChange,
@@ -30,7 +30,7 @@ export function EventsTable({
 }: EventsTableProps) {
   const sorted = [...events].sort((a, b) => a.year - b.year || a.month - b.month);
   const hasOutside = sorted.some(
-    (event) => eventWindowStatus(event, startYear, startMonth, horizonYears) !== 'within',
+    (event) => eventWindowStatus(event, startYear, startMonth, horizonMonths) !== 'within',
   );
 
   return (
@@ -47,7 +47,7 @@ export function EventsTable({
         <p className="events__empty">No events yet — the value stays at its base.</p>
       ) : (
         sorted.map((event) => {
-          const status = eventWindowStatus(event, startYear, startMonth, horizonYears);
+          const status = eventWindowStatus(event, startYear, startMonth, horizonMonths);
           const valueMin = supportsAbsolute && event.kind === 'absolute' ? 0 : -100000;
           const valueMax = supportsAbsolute && event.kind === 'absolute' ? 100 : 100000;
           return (
