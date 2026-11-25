@@ -734,6 +734,7 @@ input[type='range']::-moz-range-thumb {
 
 .chart-card__canvas {
   margin-top: 10px;
+  touch-action: pan-y;
 }
 
 .chart-toolbar {

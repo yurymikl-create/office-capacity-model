@@ -183,6 +183,7 @@ export function CapacityChart({
   const reducedMotion = usePrefersReducedMotion();
   const animationDuration = reducedMotion ? 0 : 300;
   const canvasRef = useRef<HTMLDivElement | null>(null);
+  const viewRef = useRef<Viewport>(fullViewport(points.length));
   const [chartWidth, setChartWidth] = useState(720);
   const [viewport, setViewport] = useState<Viewport>(() => fullViewport(points.length));
 
@@ -234,7 +235,119 @@ export function CapacityChart({
     return () => element.removeEventListener('wheel', handleWheel);
   }, [points.length]);
 
+  useEffect(() => {
+    const element = canvasRef.current;
+    if (!element) return;
+
+    type Gesture =
+      | { mode: 'pan'; startViewport: Viewport; startX: number; startY: number }
+      | { mode: 'pinch'; lastDistance: number }
+      | null;
+
+    let gesture: Gesture = null;
+
+    const touchDistance = (touches: TouchList) => {
+      const first = touches[0];
+      const second = touches[1];
+      if (!first || !second) return 0;
+      return Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length >= 2) {
+        gesture = { mode: 'pinch', lastDistance: touchDistance(event.touches) };
+        return;
+      }
+      const touch = event.touches[0];
+      if (touch) {
+        gesture = {
+          mode: 'pan',
+          startViewport: viewRef.current,
+          startX: touch.clientX,
+          startY: touch.clientY,
+        };
+      }
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const current = gesture;
+      if (!current) return;
+
+      if (current.mode === 'pinch' && event.touches.length >= 2) {
+        event.preventDefault();
+        const next = touchDistance(event.touches);
+        if (!next || !current.lastDistance) return;
+        const factor = current.lastDistance / next;
+        current.lastDistance = next;
+
+        const rect = element.getBoundingClientRect();
+        const first = event.touches[0];
+        const second = event.touches[1];
+        const midX =
+          first && second ? (first.clientX + second.clientX) / 2 : rect.left + rect.width / 2;
+        const plotLeft = 56;
+        const plotWidth = Math.max(1, rect.width - plotLeft - 20);
+        const ratio = Math.min(1, Math.max(0, (midX - rect.left - plotLeft) / plotWidth));
+
+        setViewport((viewportState) => {
+          const safe = clampViewport(viewportState, points.length);
+          const anchor = safe.start + Math.round(ratio * (safe.end - safe.start));
+          return zoomViewport(safe, factor, points.length, anchor);
+        });
+        return;
+      }
+
+      if (current.mode === 'pan' && event.touches.length === 1) {
+        const touch = event.touches[0];
+        if (!touch) return;
+        const dx = current.startX - touch.clientX;
+        const dy = current.startY - touch.clientY;
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+        if (Math.abs(dx) <= Math.abs(dy)) return;
+
+        event.preventDefault();
+        const rect = element.getBoundingClientRect();
+        const plotWidth = Math.max(1, rect.width - 76);
+        const buckets = current.startViewport.end - current.startViewport.start + 1;
+        const delta = Math.round(dx / Math.max(1, plotWidth / buckets));
+        if (delta !== 0) {
+          setViewport(panViewport(current.startViewport, delta, points.length));
+        }
+      }
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length === 0) {
+        gesture = null;
+        return;
+      }
+      if (gesture?.mode === 'pinch' && event.touches.length === 1) {
+        const touch = event.touches[0];
+        if (touch) {
+          gesture = {
+            mode: 'pan',
+            startViewport: viewRef.current,
+            startX: touch.clientX,
+            startY: touch.clientY,
+          };
+        }
+      }
+    };
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('touchcancel', handleTouchEnd);
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [points.length]);
+
   const view = useMemo(() => clampViewport(viewport, points.length), [viewport, points.length]);
+  viewRef.current = view;
   const visiblePoints = useMemo(
     () => points.slice(view.start, view.end + 1),
     [points, view.start, view.end],
@@ -364,7 +477,9 @@ export function CapacityChart({
         ) : null}
       </div>
 
-      <p className="chart-hint">Ctrl/⌘ + scroll to zoom · drag the bar below to scroll</p>
+      <p className="chart-hint">
+        Ctrl/⌘ + scroll or pinch to zoom · drag or swipe to scroll
+      </p>
 
       <div className="chart-card__canvas" ref={canvasRef}>
         <ResponsiveContainer width="100%" height={400}>

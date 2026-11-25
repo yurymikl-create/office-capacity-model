@@ -64,8 +64,8 @@ src/
 
 - **Scale:** `Auto | M | Q | Y`. Auto uses months up to 24 months, quarters up to 60, years beyond; a manual choice overrides it and is saved with the state.
 - **Aggregation rule:** each quarter/year is represented by its **worst month** — maximum deficit first, then maximum utilization, then the earliest month. All values of a bucket come from that single month, so a red month is never hidden by averaging or by a calm year-end. Tooltips show the bucket plus “worst month: Aug 2026”.
-- **Scroll:** the brush under the chart pans the timeline when dragged and resizes the window with its handles; the current range is printed in the toolbar. Horizontal trackpad scrolling works over the chart as well.
-- **Zoom:** `− / Fit / +` buttons (25% steps, at least two buckets) and `Ctrl/⌘ + scroll` with the cursor as the anchor. The Y scale stays stable while scrolling so the axis does not jump.
+- **Scroll:** the brush under the chart pans the timeline when dragged and resizes the window with its handles; the current range is printed in the toolbar. Horizontal trackpad scrolling works over the chart, and on touch screens a one-finger horizontal swipe pans the timeline.
+- **Zoom:** `− / Fit / +` buttons (25% steps, at least two buckets), `Ctrl/⌘ + scroll` with the cursor as the anchor, and **pinch-to-zoom** on touch screens. Vertical page scrolling still works over the chart; the Y scale stays stable while scrolling so the axis does not jump.
 - **Crossing outside the window:** the vertical marker is hidden and a `Crossing: Nov 2028 →` chip appears; clicking it centres the window on that bucket.
 - The month-level table, KPIs and alerts always use all monthly points, regardless of the current view.
 
@@ -97,4 +97,3 @@ The build uses `base: './'`, so `dist` works from any subpath. `.github/workflow
 - No weekly day-by-day profile — monthly average attendance only.
 - No money, Excel or OCR; no backend and no network requests.
 - Custom named scenarios are not saved: a scenario is defined by the current parameters only.
-- Pinch-to-zoom on touch screens is not implemented; the brush and the zoom buttons work on touch devices.
