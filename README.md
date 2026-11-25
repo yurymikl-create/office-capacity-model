@@ -1,0 +1,88 @@
+# Headcount — Seats — Attendance
+
+A static office occupancy model: React + TypeScript + Vite + Recharts. No backend, no network requests at runtime. It shows when the number of people actually coming to the office exceeds the number of seats.
+
+## Formulas
+
+```
+On-site[m]  = Headcount[m] × Attendance[m] / 100
+Deficit[m]  = max(0, On-site[m] − Seats[m])
+Utilization = On-site[m] / Seats[m] × 100
+Crossing    = first month where On-site >= Seats
+```
+
+Horizon 1 / 2 / 5 / 10 years; points are computed for `m = 0…N` (start month + 12 × years). The table and the summary are always monthly; the chart aggregates by year only for 5- and 10-year horizons (2 years is 24 months, so the “> 24” condition does not apply).
+
+## Parameter modes
+
+- **Flat** — the value never changes.
+- **Trend** — `base + step × m`. For headcount and seats the step is in units/month, for attendance in percentage points/month (40 → 43 → 46%).
+- **Events** — a “month/year + change” table. Headcount and seats accept a delta only (+100, −30); attendance accepts an absolute value in % or a delta in pp. An event applies from its month and holds until the next one. Events outside the horizon are dimmed and do not affect the model; multiple events in the same month apply in insertion order.
+
+Value guards: attendance is clamped to 0…100%, headcount ≥ 0, seats ≥ 1.
+
+## Presets and persistence
+
+- **Baseline** — everything flat: 100 people, 100 seats, 60% attendance, 2-year horizon.
+- **Growth** — headcount on a trend of 2% of the base per month, 5-year horizon.
+- **Hybrid** — 160 people, 40% attendance (64 on site), 60 seats and a “+20 seats” event in August of the start year (2-year horizon).
+
+Presets define the whole state, including the start month (January of the current year) and the horizon. Any manual edit switches the scenario to “Custom”.
+
+The current state is autosaved to `localStorage` under `office-capacity-model:v1` (with version and shape validation). “Clear all” removes the key and restores the baseline scenario; the next write happens only after the next edit.
+
+## Commands
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm test         # vitest: calculations, presets, storage
+npm run lint     # oxlint
+npm run build    # tsc --noEmit && vite build → dist/
+npm run preview  # preview the built version locally
+```
+
+## Architecture
+
+```
+src/
+  App.tsx                    page composition
+  data/defaults.ts           defaults, month labels, parameter metadata
+  data/presets.ts            three presets
+  hooks/useCapacityModel.ts  state, autosave, derived data
+  lib/calc.ts                monthly expansion, crossing, deficit, aggregation
+  lib/storage.ts             localStorage with validation
+  lib/format.ts              en-US formatting and month labels
+  components/                parameter cards, events table, chart, summary, table
+```
+
+## Chart
+
+- “Seats” — stepped line in events mode, linear otherwise (#1A1A1A).
+- “On-site” — accent #2563EB; “Headcount” — muted #94A3B8. Every series can be hidden with the legend chips.
+- The green/red fill is a stack of three `Area` series: the base `min(on-site, seats)`, green `max(0, seats − on-site)`, red `max(0, on-site − seats)`. This paints exactly the gap between the lines.
+- The crossing marker is a `ReferenceLine` plus a `ReferenceDot`; the caption sits in a pill with a white background, clamped to the plot edges, with a 300 ms fade-in.
+- The Y axis uses a hand-calculated “round” step (`niceStep`) so ticks never look like 55/110/165.
+
+## CSP and fonts
+
+The CSP meta tag is injected at build time by the `office-capacity-csp` plugin (`vite.config.ts`): in dev, Vite uses an inline react-refresh script that strict `script-src 'self'` would block. The policy:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+img-src 'self' data:; font-src 'self' data:; connect-src 'self';
+base-uri 'none'; form-action 'none'
+```
+
+`style-src 'unsafe-inline'` is required: Recharts positions the tooltip and legend with inline styles. Scripts stay strict and no external CDN is used — Inter is bundled locally via `@fontsource-variable/inter`.
+
+## Deploying to GitHub Pages
+
+The build uses `base: './'`, so `dist` works from any subpath. `.github/workflows/deploy.yml` is included: enable Pages with the “GitHub Actions” source and a push to `main` will publish the build.
+
+## MVP limitations
+
+- One mode per parameter: switching modes mid-timeline is not supported.
+- No weekly day-by-day profile — monthly average attendance only.
+- No money, Excel or OCR; no backend and no network requests.
+- Custom named scenarios are not saved: three presets plus autosave of the current state.
